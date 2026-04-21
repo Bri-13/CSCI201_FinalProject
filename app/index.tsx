@@ -11,6 +11,12 @@ export default function Home() {
           <Text>Go to Profile</Text>
         </Pressable>
       </Link>
+
+      <Link href="/login" asChild>
+        <Pressable>
+          <Text>Go to Login</Text>
+        </Pressable>
+      </Link>
     </View>
   );
 }
