@@ -51,26 +51,55 @@ String user = "root";
 String password = "YOUR_PASSWORD";
 
 4. Add Required JARs to Tomcat
+
+Place the following files in:
 apache-tomcat-10.x/lib/
+
+- mysql-connector-j-*.jar
+- json-*.jar
 
 5. Compile Backend
 cd backend/src
 javac -cp ".:/path-to-tomcat/lib/*" *.java
 
-6. Start Tomcat
+6. Deploy to Tomcat
+cd ..
+mkdir -p AuthApp/WEB-INF/classes
+mv src/*.class AuthApp/WEB-INF/classes/
+cp -r AuthApp /path-to-tomcat/webapps/
+
+7. Restart Tomcat
+
 cd /path-to-tomcat/bin
+./shutdown.sh
 ./startup.sh
 
-7. Test Backend
+8. Test Backend
 curl -X POST http://localhost:8080/AuthApp/AuthServlet \
 -H "Content-Type: application/json" \
 -d '{"action":"signup","username":"testuser","email":"test@example.com","password":"1234"}'
+
+Note:
+After making changes to backend code, you must:
+1. Recompile
+2. Copy `.class` files to Tomcat
+3. Restart Tomcat
+
+Otherwise, changes will not take effect.
 
 
 ## Backend Dependencies
 
 This project uses Java Servlets, so dependencies are managed via `.jar` files rather than `npm`.
 Required libraries must be placed in the Tomcat `/lib` directory.
+
+Note: don't forget to update the BASE_URL in login.js and signup.js in the following manner: 
+
+Run this to get your IP address:
+ipconfig getifaddr en0
+
+Then replace BASE_URL:
+http://YOUR_IP:8080/AuthApp/AuthServlet
 
 ## Get a fresh project
 
