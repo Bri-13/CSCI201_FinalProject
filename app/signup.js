@@ -2,6 +2,8 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-nativ
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 
+const BASE_URL = "http://10.5.10.47:8080/AuthApp/AuthServlet";
+
 export default function Signup() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -10,7 +12,7 @@ export default function Signup() {
 
   const handleSignup = async () => {
     try {
-      const res = await fetch('http://localhost:8080/AuthServlet', {
+      const res = await fetch(BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'signup', username, email, password })

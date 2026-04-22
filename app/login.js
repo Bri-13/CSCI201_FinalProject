@@ -2,31 +2,40 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-nativ
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 
+// update based on your backend URL
+const BASE_URL = "http://10.5.10.47:8080/AuthApp/AuthServlet";
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
 
   const handleLogin = async () => {
-    try {
-      const res = await fetch('http://localhost:8080/AuthServlet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'login', email, password })
-      });
+  try {
+    const res = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'login',
+        email,
+        password
+      })
+    });
 
-      const data = await res.json();
+    const data = await res.json();
+    console.log("LOGIN RESPONSE:", data);
 
-      if (data.success) {
-        Alert.alert('Success', 'Logged in!');
-        router.replace('/');
-      } else {
-        Alert.alert('Error', data.message);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Server error');
+    if (data.success) {
+      router.replace('/'); 
+    } else {
+      Alert.alert('Error', data.message);
     }
-  };
+
+  } catch (err) {
+    console.log("ERROR:", err);
+    Alert.alert('Network error');
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -60,7 +69,6 @@ export default function Login() {
   );
 }
 
-// ✅ styles go OUTSIDE the component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
