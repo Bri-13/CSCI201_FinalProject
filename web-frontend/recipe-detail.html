@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recipe – Homebite</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="recipe-detail.css"/>
+</head>
+<body>
+
+<!-- ── NAVIGATION ─────────────────────────────────────────── -->
+<nav>
+  <span class="nav-logo" onclick="window.location.href='home.html'">Homebite</span>
+
+  <ul class="nav-links">
+    <li><a href="home.html">Home</a></li>
+    <li><a href="profile.html">My Recipes</a></li>
+    <li><a href="profile.html">Profile</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <button class="btn-upload" id="uploadBtn" onclick="window.location.href='recipe-create.html'">
+      + Upload Recipe
+    </button>
+    <div class="avatar" id="navAvatar" onclick="window.location.href='profile.html'">T</div>
+
+    <!-- Shown when NOT logged in -->
+    <div class="guest-actions" id="guestActions" style="display:none;">
+      <a href="login.html" class="btn-login">Log in</a>
+      <a href="login.html" class="btn-signup">Sign up</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── BACK LINK ──────────────────────────────────────────── -->
+<div class="back-bar">
+  <a class="back-link" onclick="history.back()">← Back</a>
+</div>
+
+<!-- ── HERO ───────────────────────────────────────────────── -->
+<div class="detail-hero" id="detailHero">
+  <div class="detail-hero-emoji" id="detailEmoji"></div>
+</div>
+
+<!-- ── RECIPE HEADER ──────────────────────────────────────── -->
+<div class="detail-wrap">
+
+  <div class="detail-header">
+    <div class="detail-header-left">
+      <div class="detail-tags" id="detailTags"></div>
+      <h1 class="detail-title" id="detailTitle">Loading…</h1>
+      <div class="detail-author" id="detailAuthor"></div>
+
+      <div class="detail-meta-row" id="detailMeta"></div>
+
+      <div class="detail-rating-row" id="detailRatingRow"></div>
+    </div>
+
+    <div class="detail-header-actions">
+      <!-- TODO (Shriya): connect save state via /api/users/me/saved -->
+      <button class="btn-detail-save" id="detailSaveBtn" onclick="toggleDetailSave()">
+        ♡ Save
+      </button>
+      <!-- Links to Alex's recipe-create page (Shriya's AI editor) -->
+      <a id="detailAiBtn" href="recipe-create.html" class="btn-detail-ai">
+        ✨ Modify with AI
+      </a>
+    </div>
+  </div>
+
+  <!-- ── MAIN CONTENT GRID ────────────────────────────────── -->
+  <div class="detail-grid">
+
+    <!-- LEFT: description + ingredients + instructions -->
+    <div class="detail-main">
+
+      <p class="detail-desc" id="detailDesc"></p>
+
+      <!-- Ingredients -->
+      <section class="detail-section">
+        <h2 class="detail-section-title">Ingredients</h2>
+        <p class="detail-servings" id="detailServings"></p>
+        <ul class="ingredient-grid" id="ingredientGrid"></ul>
+      </section>
+
+      <!-- Instructions -->
+      <section class="detail-section">
+        <h2 class="detail-section-title">Instructions</h2>
+        <ol class="step-list" id="stepList"></ol>
+      </section>
+
+    </div>
+
+    <!-- RIGHT sidebar -->
+    <aside class="detail-sidebar">
+
+      <!-- Nutrition -->
+      <div class="sidebar-card" id="nutritionCard">
+        <div class="sidebar-title">Nutrition <span class="nutrition-note">per serving</span></div>
+        <div class="nutrition-grid" id="nutritionGrid"></div>
+      </div>
+
+      <!-- Modify with AI CTA (sidebar version) -->
+      <div class="sidebar-card ai-cta-card">
+        <div class="sidebar-title">
+          Modify with AI <span class="ai-badge">AI</span>
+        </div>
+        <p class="ai-cta-desc">
+          Let AI suggest a healthier, vegan, or allergy-friendly version of this recipe.
+        </p>
+        <a href="recipe-create.html" class="btn-ai-cta">Try AI Modify →</a>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ── COMMENTS SECTION ───────────────────────────────────── -->
+  <!-- Source: Evelyn's Social Database -->
+  <!-- TODO: fetch(`/api/recipes/${id}/comments`) — Evelyn -->
+  <section class="comments-section">
+    <h2 class="detail-section-title">
+      Comments <span class="comment-count-badge" id="commentCountBadge"></span>
+    </h2>
+
+    <!-- Add comment form -->
+    <div class="comment-form">
+      <div class="comment-form-top">
+        <div class="comment-avatar-placeholder">T</div>
+        <textarea
+          id="commentInput"
+          class="comment-textarea"
+          placeholder="Share your experience with this recipe…"
+          rows="3"
+        ></textarea>
+      </div>
+      <div class="comment-form-bottom">
+        <div class="comment-rate-wrap">
+          <span class="comment-rate-label">Your rating:</span>
+          <div class="interactive-stars" id="interactiveStars">
+            <span class="istar" data-val="1">☆</span>
+            <span class="istar" data-val="2">☆</span>
+            <span class="istar" data-val="3">☆</span>
+            <span class="istar" data-val="4">☆</span>
+            <span class="istar" data-val="5">☆</span>
+          </div>
+        </div>
+        <!-- TODO: POST to /api/recipes/${id}/comments — Evelyn -->
+        <button class="btn-post-comment" onclick="postComment()">Post Comment</button>
+      </div>
+    </div>
+
+    <!-- Comment list -->
+    <div class="comment-list" id="commentList"></div>
+
+  </section>
+
+</div><!-- /detail-wrap -->
+
+<script src="data.js"></script>
+<script src="recipe-detail.js"></script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+/* ============================================================
+   recipe-detail.css — Homebite Recipe Detail Page styles
+   ============================================================ */
+
+/* ── BACK BAR ── */
+.back-bar {
+  padding: 14px 48px 0;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.back-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+.back-link:hover { color: var(--orange); }
+
+/* ── HERO ── */
+.detail-hero {
+  width: 100%;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  animation: fadeUp 0.5s ease both;
+}
+
+.detail-hero-emoji {
+  font-size: 96px;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.12));
+}
+
+/* ── WRAPPER ── */
+.detail-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 48px 80px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+
+/* ── RECIPE HEADER ── */
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.detail-header-left { flex: 1; min-width: 0; }
+
+.detail-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.detail-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.detail-author {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.detail-meta-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.meta-pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  color: var(--dark);
+}
+
+.detail-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.detail-stars { display: inline-flex; gap: 2px; }
+
+.detail-rating-num { font-weight: 500; color: var(--dark); }
+
+.detail-comment-count { color: var(--muted); }
+
+/* ── HEADER ACTIONS ── */
+.detail-header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-detail-save {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 10px 22px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.btn-detail-save:hover { border-color: var(--green); color: var(--green); }
+.btn-detail-save.saved { border-color: var(--green); color: var(--green); background: #EBF3EC; }
+
+.btn-detail-ai {
+  display: inline-block;
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.btn-detail-ai:hover { background: #C26B4A; }
+
+/* ── MAIN CONTENT GRID ── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 40px;
+  margin-bottom: 56px;
+}
+
+.detail-desc {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--muted);
+  margin-bottom: 36px;
+}
+
+/* ── SECTIONS ── */
+.detail-section { margin-bottom: 40px; }
+
+.detail-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--border);
+}
+
+.detail-servings {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── INGREDIENTS GRID ── */
+.ingredient-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
+  list-style: none;
+}
+
+.ingredient-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  background: var(--white);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.ingredient-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.ingredient-placeholder {
+  color: var(--muted);
+  font-size: 14px;
+  list-style: none;
+}
+
+/* ── INSTRUCTIONS ── */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step-counter;
+}
+
+.step-item {
+  counter-increment: step-counter;
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  padding: 16px 18px;
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.step-item::before {
+  content: counter(step-counter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── SIDEBAR ── */
+.detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── NUTRITION CARD ── */
+.nutrition-note {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.nutrition-item {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--cream);
+  border-radius: 10px;
+}
+
+.nutrition-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+  font-family: 'Playfair Display', serif;
+}
+
+.nutrition-unit {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+.nutrition-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ── COMMENTS SECTION ── */
+.comments-section { border-top: 1.5px solid var(--border); padding-top: 40px; }
+
+.comment-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  background: var(--orange);
+  color: var(--white);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 7px;
+  font-family: 'DM Sans', sans-serif;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+/* ── COMMENT FORM ── */
+.comment-form {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
+.comment-form-top {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.comment-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.comment-textarea {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--dark);
+  resize: none;
+  outline: none;
+  background: var(--cream);
+  transition: border-color 0.18s;
+}
+.comment-textarea:focus { border-color: var(--orange); background: var(--white); }
+.comment-textarea::placeholder { color: #B5A89E; }
+
+.comment-form-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.comment-rate-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-rate-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.interactive-stars { display: flex; gap: 3px; }
+
+.istar {
+  font-size: 22px;
+  cursor: pointer;
+  color: #D9CFC8;
+  transition: color 0.12s, transform 0.12s;
+  line-height: 1;
+  user-select: none;
+}
+.istar:hover,
+.istar-active { color: var(--orange); transform: scale(1.15); }
+
+.btn-post-comment {
+  background: var(--orange);
+  color: var(--white);
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-post-comment:hover { background: #C26B4A; }
+
+/* ── COMMENT LIST ── */
+.comment-list { display: flex; flex-direction: column; gap: 16px; }
+
+.comment-card {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  animation: cardIn 0.3s ease both;
+}
+
+.comment-new { border-color: var(--orange); }
+
+.comment-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.comment-body { flex: 1; }
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.comment-user  { font-size: 13px; font-weight: 600; }
+.comment-stars { display: inline-flex; gap: 1px; }
+.comment-time  { font-size: 11px; color: var(--muted); margin-left: auto; }
+.comment-text  { font-size: 14px; line-height: 1.6; color: var(--dark); }
+
+.no-comments {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  padding: 32px 0;
+}

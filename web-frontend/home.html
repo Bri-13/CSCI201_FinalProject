@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Homebite – Home</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Homebite styles (shared across pages) -->
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ── NAVIGATION ─────────────────────────────────────────── -->
+<nav>
+  <span class="nav-logo" onclick="resetToHome()">Homebite</span>
+
+  <ul class="nav-links">
+    <li><a onclick="resetToHome()" class="active">Home</a></li>
+    <li><a href="profile.html">My Recipes</a></li>
+    <li><a href="profile.html">Profile</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <!-- Shown when logged in (hidden in guest mode) -->
+    <button class="btn-upload" id="uploadBtn" onclick="window.location.href='recipe-create.html'">
+      + Upload Recipe
+    </button>
+    <div class="avatar" id="navAvatar" onclick="window.location.href='profile.html'">T</div>
+
+    <!-- Shown when NOT logged in (hidden by default) -->
+    <div class="guest-actions" id="guestActions" style="display:none;">
+      <a href="login.html" class="btn-login">Log in</a>
+      <a href="login.html" class="btn-signup">Sign up</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO + SEARCH ──────────────────────────────────────── -->
+<section class="hero">
+  <p class="hero-sub">Cook the day gently.</p>
+  <h1>What are you cooking today?</h1>
+
+  <div class="search-wrap">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search recipes, ingredients, cuisines…"
+    />
+    <button class="btn-search" onclick="handleSearch()">Search</button>
+  </div>
+
+  <!-- Quick filter pills + More Filters button -->
+  <div class="filter-row">
+    <div class="pill active"  onclick="setCategory(this,'all')">All</div>
+    <div class="pill"         onclick="setCategory(this,'quick')">Quick meals</div>
+    <div class="pill"         onclick="setCategory(this,'vegan')">Vegan</div>
+    <div class="pill"         onclick="setCategory(this,'pasta')">Pasta</div>
+    <div class="pill"         onclick="setCategory(this,'healthy')">Healthy</div>
+    <div class="pill"         onclick="setCategory(this,'desserts')">Desserts</div>
+    <div class="pill"         onclick="setCategory(this,'asian')">Asian</div>
+    <div class="pill"         onclick="setCategory(this,'italian')">Italian</div>
+    <div class="pill"         onclick="setCategory(this,'breakfast')">Breakfast</div>
+    <button id="moreFiltersBtn" class="pill filter-more-btn" onclick="toggleFilterPanel()">
+      ▼ More Filters
+    </button>
+    <span id="filterIndicator" class="filter-indicator" style="display:none;">● Filtered</span>
+  </div>
+
+  <!-- Expandable filter panel -->
+  <div id="filterPanel" class="filter-panel">
+    <div class="filter-panel-inner">
+
+      <div class="filter-group">
+        <div class="filter-group-label">Difficulty</div>
+        <div class="filter-chips">
+          <div class="pill chip-difficulty active" onclick="setDifficulty(this,'all')">All</div>
+          <div class="pill chip-difficulty" onclick="setDifficulty(this,'Easy')">Easy</div>
+          <div class="pill chip-difficulty" onclick="setDifficulty(this,'Medium')">Medium</div>
+          <div class="pill chip-difficulty" onclick="setDifficulty(this,'Hard')">Hard</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Prep Time</div>
+        <div class="filter-chips">
+          <div class="pill chip-time active" onclick="setTime(this,'all')">Any</div>
+          <div class="pill chip-time" onclick="setTime(this,'quick')">≤ 20 min</div>
+          <div class="pill chip-time" onclick="setTime(this,'medium')">≤ 40 min</div>
+          <div class="pill chip-time" onclick="setTime(this,'long')">40+ min</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Cuisine</div>
+        <div class="filter-chips">
+          <div class="pill chip-cuisine active" onclick="setCategory(this,'all')">All</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'italian')">Italian</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'asian')">Asian</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'mexican')">Mexican</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'indian')">Indian</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'mediterranean')">Mediterranean</div>
+          <div class="pill chip-cuisine" onclick="setCategory(this,'american')">American</div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Dietary</div>
+        <div class="filter-chips">
+          <div class="pill chip-dietary" onclick="setCategory(this,'vegan')">Vegan</div>
+          <div class="pill chip-dietary" onclick="setCategory(this,'vegetarian')">Vegetarian</div>
+          <div class="pill chip-dietary" onclick="setCategory(this,'healthy')">Healthy</div>
+          <div class="pill chip-dietary" onclick="setCategory(this,'gluten-free')">Gluten-Free</div>
+          <div class="pill chip-dietary" onclick="setCategory(this,'dairy-free')">Dairy-Free</div>
+        </div>
+      </div>
+
+      <button class="btn-clear-filters" onclick="clearAllFilters()">✕ Clear all filters</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN GRID ───────────────────────────────────────────── -->
+<div class="main-grid">
+
+  <!-- LEFT COLUMN: masonry recipe feed -->
+  <div>
+
+    <!-- Search result banner -->
+    <div class="result-banner" id="resultBanner">
+      <span>Showing results for: <strong id="resultQuery"></strong></span>
+      <button class="btn-clear" onclick="resetToHome()">✕ Clear search</button>
+    </div>
+
+    <!-- Section header -->
+    <div class="section-header" id="sectionHeader">
+      <h2 class="section-title" id="feedTitle">Recipes</h2>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">🍽️</div>
+      <p>No recipes found. Try a different search!</p>
+    </div>
+
+    <!-- Masonry grid — injected by home.js -->
+    <div class="masonry-grid" id="masonryGrid"></div>
+
+    <!-- Infinite scroll sentinel -->
+    <div id="sentinel" class="sentinel"></div>
+
+  </div><!-- /left column -->
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <!-- AI Modify CTA -->
+    <div class="sidebar-card ai-cta-card">
+      <div class="sidebar-title">
+        Modify with AI <span class="ai-badge">AI</span>
+      </div>
+      <p class="ai-cta-desc">
+        Open any recipe and let AI suggest a healthier, vegan, or allergy-friendly version.
+      </p>
+      <a href="recipe-create.html" class="btn-ai-cta">Try AI Modify →</a>
+    </div>
+
+    <!-- Saved Recipes preview -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Saved Recipes</div>
+      <div id="savedPreview">
+        <!-- injected by home.js -->
+      </div>
+      <a href="profile.html" class="see-all" style="display:block; margin-top:12px;">
+        View all saved →
+      </a>
+    </div>
+
+    <!-- My Modified Recipes (AI-edited versions) -->
+    <!-- Source: Christopher's Modified Recipe Database -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">
+        My Modified Recipes <span class="ai-badge">AI</span>
+      </div>
+      <div id="modifiedPreview">
+        <!-- injected by home.js -->
+      </div>
+      <a href="profile.html" class="see-all" style="display:block; margin-top:12px;">
+        View all modified →
+      </a>
+    </div>
+
+  </aside>
+
+</div><!-- /main-grid -->
+
+<!-- Scripts: data.js must come before home.js -->
+<script src="data.js"></script>
+<script src="home.js"></script>
+
+</body>
+</html>
