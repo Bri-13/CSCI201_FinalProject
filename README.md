@@ -25,6 +25,53 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Backend Setup
+1. Install Requirements
+- Java JDK (17+ recommended)
+- MySQL
+- Apache Tomcat (10.x)
+
+2. Set up MySQL Database
+Run the following in MySQL Workbench:
+CREATE DATABASE auth_db;
+
+USE auth_db;
+
+CREATE TABLE Users (
+  user_id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50),
+  email VARCHAR(100) UNIQUE,
+  password VARCHAR(255)
+);
+
+3. Configure Database Connection
+go to: backend/src/DBConnection.java
+then update:
+String user = "root";
+String password = "YOUR_PASSWORD";
+
+4. Add Required JARs to Tomcat
+apache-tomcat-10.x/lib/
+
+5. Compile Backend
+cd backend/src
+javac -cp ".:/path-to-tomcat/lib/*" *.java
+
+6. Start Tomcat
+cd /path-to-tomcat/bin
+./startup.sh
+
+7. Test Backend
+curl -X POST http://localhost:8080/AuthApp/AuthServlet \
+-H "Content-Type: application/json" \
+-d '{"action":"signup","username":"testuser","email":"test@example.com","password":"1234"}'
+
+
+## Backend Dependencies
+
+This project uses Java Servlets, so dependencies are managed via `.jar` files rather than `npm`.
+Required libraries must be placed in the Tomcat `/lib` directory.
+
 ## Get a fresh project
 
 When you're ready, run:
