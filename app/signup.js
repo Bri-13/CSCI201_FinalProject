@@ -1,8 +1,9 @@
 import { View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { BASE_URL as API_BASE } from '../api';
 
-const BASE_URL = "http://10.5.10.47:8080/AuthApp/AuthServlet";
+const BASE_URL = `${API_BASE}/AuthServlet`;
 
 export default function Signup() {
   const [username, setUsername] = useState('');

@@ -9,8 +9,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { setUser } from '../authStore';
+import { BASE_URL as API_BASE } from '../api';
 
-const BASE_URL = "http://localhost:8080/AuthApp/AuthServlet";
+const BASE_URL = `${API_BASE}/AuthServlet`;
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -38,6 +40,7 @@ export default function Login() {
       console.log('LOGIN RESPONSE:', data);
 
       if (data.success) {
+        setUser({ username: data.username || email.split('@')[0], email });
         router.replace('/');
       } else {
         Alert.alert('Error', data.message || 'Login failed');
