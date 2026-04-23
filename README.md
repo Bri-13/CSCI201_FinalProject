@@ -44,6 +44,38 @@ CREATE TABLE Users (
   password VARCHAR(255)
 );
 
+CREATE TABLE IF NOT EXISTS Recipes (
+  recipe_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  recipe_name VARCHAR(255) NOT NULL,
+  ingredients TEXT NOT NULL,
+  instructions TEXT NOT NULL,
+  prep_time INT NOT NULL,
+  cook_time INT NOT NULL,
+  difficulty VARCHAR(50),
+  category VARCHAR(100),
+  photo_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ModifiedRecipes (
+  modified_recipe_id INT AUTO_INCREMENT PRIMARY KEY,
+  original_recipe_id INT NOT NULL,
+  user_id INT NOT NULL,
+  recipe_name VARCHAR(255) NOT NULL,
+  ingredients TEXT NOT NULL,
+  instructions TEXT NOT NULL,
+  prep_time INT,
+  cook_time INT,
+  difficulty VARCHAR(50),
+  category VARCHAR(100),
+  photo_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (original_recipe_id) REFERENCES Recipes(recipe_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+);
+
 3. Configure Database Connection
 go to: backend/src/DBConnection.java
 then update:
