@@ -20,6 +20,8 @@ import org.json.JSONObject;
 @WebServlet("/comments")
 public class CommentsServlet extends HttpServlet {
 
+	private static final long serialVersionUID = 1L;
+
 	// Method to let .js call the servlet and tell browser response is JSON
     private void setCorsHeaders(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");
