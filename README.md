@@ -125,13 +125,17 @@ Otherwise, changes will not take effect.
 This project uses Java Servlets, so dependencies are managed via `.jar` files rather than `npm`.
 Required libraries must be placed in the Tomcat `/lib` directory.
 
-Note: don't forget to update the BASE_URL in login.js and signup.js in the following manner: 
+To connect the mobile app to your local backend, update the BASE_URL in:
+home.js
+login.js
+signup.js
 
-Run this to get your IP address:
-ipconfig getifaddr en0
+1. Get your local IP address
+Mac: ipconfig getifaddr en0
+Windows: ipconfig
 
 Then replace BASE_URL:
-http://YOUR_IP:8080/AuthApp/AuthServlet
+http://YOUR_IP:8080/AuthApp/
 
 ## Get a fresh project
 
