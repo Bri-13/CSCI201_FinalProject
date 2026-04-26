@@ -1,6 +1,5 @@
 // This file handles requests sent to /ratings:
-	// GET  action=getRatingCountByRecipe : returns number of ratings a recipe_id has
-	// GET  action=getRatingByRecipe : returns the overall rating (avg of all ratings) of a recipe_id
+	// GET  action=getRatingSummaryByRecipe : returns number of ratings a recipe_id has and its overall rating (avg of all ratings)
 
 
 import java.io.IOException;
@@ -38,15 +37,11 @@ public class RatingsServlet extends HttpServlet {
     
     
     // DOGET METHOD: check action parameter of HTTP request for:
-    	// GET COUNT : action=getRatingCountByRecipe --> returns number of ratings a recipe_id has
+    	// GET COUNT : action=getRatingSummaryByRecipe --> returns number of ratings a recipe_id has and its overall rating (avg of all ratings)
     		// Response Structure:
  			//	{   "success": true,
- 			//  	"recipe_id": 4",
- 			//  	"rating_count": 17	}
-	    // GET RATING : action=getRatingByRecipe --> returns the overall rating (avg of all ratings) of a recipe_id
-			// Response Structure:
-			//	{   "success": true,
-			//  	"recipe_id": 4",
+ 			//  	"recipe_id": 4,
+ 			//  	"rating_count": 17
 			//  	"average_rating": 2.34	}
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -58,29 +53,21 @@ public class RatingsServlet extends HttpServlet {
             String action = request.getParameter("action");
 
             // check action parameters for specified data to GET:
-            if ("getRatingCountByRecipe".equals(action)) { // GET: action=getRatingSummary
-            	
-            	int recipeId = Integer.parseInt(request.getParameter("recipe_id"));
-                // get summary object to return rating_count for this action
-                JSONObject summary = getRatingSummaryJson(conn, recipeId);
-                res.put("success", true);
-                res.put("recipe_id", recipeId);
-                res.put("rating_count", summary.getInt("rating_count"));
+            if ("getRatingSummaryByRecipe".equals(action)) {
 
-            } else if ("getRatingByRecipe".equals(action)) { // GET: action=getUserRating
-            	
-                int recipeId = Integer.parseInt(request.getParameter("recipe_id"));
-                // get summary object to return average_rating for this action
-                JSONObject summary = getRatingSummaryJson(conn, recipeId);
-                res.put("success", true);
-                res.put("recipe_id", recipeId);
-                res.put("average_rating", summary.getDouble("average_rating"));
-                
-            } else {
-                res.put("success", false);
-                res.put("message", "Invalid action");
-            }
-
+			    int recipeId = Integer.parseInt(request.getParameter("recipe_id"));
+				// call helper to summary object to return rating_count and average_rating
+			    JSONObject summary = getRatingSummaryJson(conn, recipeId);
+			
+			    res.put("success", true);
+			    res.put("recipe_id", recipeId);
+			    res.put("rating_count", summary.getInt("rating_count"));
+			    res.put("average_rating", summary.getDouble("average_rating"));
+				
+			} else {
+			res.put("success", false);
+			res.put("message", "Invalid action");
+			}
         } catch (Exception e) {
             res.put("success", false);
             res.put("message", e.getMessage());
@@ -97,7 +84,7 @@ public class RatingsServlet extends HttpServlet {
     // Sends statement to DB to request JSON obj of a specified recipeID's rating information 
 		// Response Structure:
 		//	{   "recipe_id": 4,
-		//  	"rating_count": 179",
+		//  	"rating_count": 179,
 		//  	"average_rating": 2.34	}
     private JSONObject getRatingSummaryJson(Connection conn, int recipeId) throws Exception {
         
