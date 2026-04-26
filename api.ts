@@ -192,12 +192,147 @@ export async function createRecipe(recipe: {
   return data.recipe_id;
 }
 
+// ── COMMENTS (Evelyn's CommentsServlet) ─────────────────────
+export type BackendComment = {
+  comment_id: number;
+  recipe_id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  comment_text: string;
+  created_at: string;
+  updated_at: string;
+  rating_value: number | null;
+};
+
+export async function fetchComments(recipeId: number): Promise<BackendComment[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/comments?action=getCommentCardsByRecipe&recipe_id=${recipeId}`
+    );
+    return data.comments || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchCommentCount(recipeId: number): Promise<number> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/comments?action=getCommentCount&recipe_id=${recipeId}`
+    );
+    return data.comment_count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function addComment(payload: {
+  recipe_id: number;
+  user_id: number;
+  comment_text: string;
+  rating_value?: number;
+}): Promise<BackendComment | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addCommentCard', ...payload }),
+    });
+    return data.comment_card || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateComment(payload: {
+  recipe_id: number;
+  user_id: number;
+  comment_text: string;
+  rating_value?: number;
+}): Promise<BackendComment | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateCommentCard', ...payload }),
+    });
+    return data.comment_card || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteComment(payload: {
+  recipe_id: number;
+  user_id: number;
+}): Promise<boolean> {
+  try {
+    await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteCommentCard', ...payload }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── RATINGS (Evelyn's RatingsServlet) ────────────────────────
+export type RatingSummary = {
+  recipe_id: number;
+  rating_count: number;
+  average_rating: number;
+};
+
+export async function fetchRatingSummary(recipeId: number): Promise<RatingSummary | null> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ratings?action=getRatingSummaryByRecipe&recipe_id=${recipeId}`
+    );
+    return {
+      recipe_id: data.recipe_id,
+      rating_count: data.rating_count || 0,
+      average_rating: data.average_rating || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ── SEARCH (Ramsey's RecipeSearchService via RecipeServlet) ──
+export async function searchRecipes(params: {
+  query?: string;
+  category?: string;
+  difficulty?: string;
+  prepTime?: string;
+}): Promise<Recipe[]> {
+  try {
+    const qs = new URLSearchParams();
+    qs.set('action', 'searchRecipes');
+    if (params.query)     qs.set('query', params.query);
+    if (params.category)  qs.set('category', params.category);
+    if (params.difficulty) qs.set('difficulty', params.difficulty);
+    if (params.prepTime)  qs.set('prepTime', params.prepTime);
+    const data = await safeFetch(`${BASE_URL}/RecipeServlet?${qs.toString()}`);
+    const rows: BackendRecipe[] = data.recipes || [];
+    return rows.map(normalizeRecipe);
+  } catch {
+    return [];
+  }
+}
+
 // ── MODIFIED RECIPES (Christopher's second servlet) ─────────
 export async function fetchUserModifiedRecipes(userId: number): Promise<BackendModifiedRecipe[]> {
-  const data = await safeFetch(
-    `${BASE_URL}/ModifiedRecipeServlet?action=getUserModifiedRecipes&user_id=${userId}`
-  );
-  return data.modified_recipes || [];
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ModifiedRecipeServlet?action=getUserModifiedRecipes&user_id=${userId}`
+    );
+    return data.modified_recipes || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function createModifiedRecipe(payload: {
@@ -212,10 +347,14 @@ export async function createModifiedRecipe(payload: {
   category?: string;
   photo_url?: string;
 }): Promise<number> {
-  const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'createModifiedRecipe', ...payload }),
-  });
-  return data.modified_recipe_id;
+  try {
+    const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createModifiedRecipe', ...payload }),
+    });
+    return data.modified_recipe_id;
+  } catch {
+    return -1;
+  }
 }

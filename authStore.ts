@@ -14,6 +14,7 @@
 type User = {
   username: string;
   email: string;
+  user_id: number;
 } | null;
 
 let currentUser: User = null;

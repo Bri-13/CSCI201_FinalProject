@@ -1,36 +1,68 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { Feather, Octicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { clearUser, getUser, subscribe } from '../authStore';
 
 type NavKey = 'home' | 'search' | 'profile';
-
-type Props = {
-  active?: NavKey;
-};
+type Props = { active?: NavKey };
 
 export default function LeftNav({ active = 'home' }: Props) {
   const router = useRouter();
+  const [user, setUser] = useState(getUser());
+
+  useEffect(() => {
+    const unsub = subscribe((u) => setUser(u));
+    return unsub;
+  }, []);
 
   const goHome    = () => router.push('/');
   const goProfile = () => router.push('/profile');
-  // Search is inline on home page — tapping just goes home and focuses feed
+
+  // Search: go home and the search bar is right there at the top
   const goSearch  = () => router.push('/');
-  const goUpload  = () => { /* TODO: recipe-create page — Alex */ };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: () => {
+            clearUser();
+            router.replace('/login');
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.leftNav}>
-      <View style={styles.menuIconWrap}>
-        <Feather name="menu" size={22} color="#4d4d4d" />
-      </View>
+      {/* Logout button at top (only shown when logged in) */}
+      {user ? (
+        <Pressable style={styles.logoutBtn} onPress={handleLogout}>
+          <Feather name="log-out" size={16} color="#5a6653" />
+        </Pressable>
+      ) : (
+        <View style={styles.logoutBtn} />
+      )}
 
-      <Pressable style={styles.navPlusButton} onPress={goUpload}>
+      {/* + Upload button */}
+      <Pressable
+        style={styles.navPlusButton}
+        onPress={() => Alert.alert('Coming soon', 'Recipe upload is coming soon!')}
+      >
         <Text style={styles.navPlusText}>+</Text>
       </Pressable>
 
+      {/* Nav items */}
       <View style={styles.navGroup}>
         <Pressable
-          style={[styles.navItem, active === 'profile' && styles.navItemActive]}
+          style={styles.navItem}
           onPress={goProfile}
         >
           <View style={[styles.navCircle, active === 'profile' && styles.navCircleActive]}>
@@ -40,7 +72,7 @@ export default function LeftNav({ active = 'home' }: Props) {
         </Pressable>
 
         <Pressable
-          style={[styles.navItem, active === 'home' && styles.navItemActive]}
+          style={styles.navItem}
           onPress={goHome}
         >
           <View style={[styles.navCircle, active === 'home' && styles.navCircleActive]}>
@@ -50,7 +82,7 @@ export default function LeftNav({ active = 'home' }: Props) {
         </Pressable>
 
         <Pressable
-          style={[styles.navItem, active === 'search' && styles.navItemActive]}
+          style={styles.navItem}
           onPress={goSearch}
         >
           <View style={[styles.navCircle, active === 'search' && styles.navCircleActive]}>
@@ -73,10 +105,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     alignItems: 'center',
   },
-  menuIconWrap: {
+  logoutBtn: {
     width: 40, height: 40,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   navPlusButton: {
     width: 40, height: 40,
@@ -95,9 +127,6 @@ const styles = StyleSheet.create({
   navItem: {
     width: '100%', alignItems: 'center',
     paddingVertical: 4,
-  },
-  navItemActive: {
-    opacity: 1,
   },
   navCircle: {
     width: 42, height: 30, borderRadius: 14,

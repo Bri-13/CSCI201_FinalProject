@@ -21,7 +21,7 @@ import {
   INITIAL_SAVED_IDS,
   Recipe,
 } from '../data';
-import { fetchAllRecipes } from '../api';
+import { fetchAllRecipes, searchRecipes } from '../api';
 import { getUser, subscribe } from '../authStore';
 
 // ── small reusable bits ──────────────────────────────────────
@@ -102,23 +102,29 @@ export default function HomePage() {
     return unsub;
   }, []);
 
+  // Load all recipes from backend (used on mount + after clearing search)
+  const loadAllRecipes = async () => {
+    try {
+      const rows = await fetchAllRecipes();
+      if (rows.length > 0) {
+        setRecipes(rows);
+        setDataSource('backend');
+      } else {
+        setRecipes(ALL_RECIPES);
+        setDataSource('mock');
+      }
+    } catch {
+      setRecipes(ALL_RECIPES);
+      setDataSource('mock');
+    }
+  };
+
   // Try to load recipes from backend on mount. Fall back to mock if it fails
   // or returns an empty list (DB likely not seeded yet).
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        const rows = await fetchAllRecipes();
-        if (cancelled) return;
-        if (rows.length > 0) {
-          setRecipes(rows);
-          setDataSource('backend');
-        } else {
-          setDataSource('mock');  // backend responded but DB is empty
-        }
-      } catch {
-        if (!cancelled) setDataSource('mock');
-      }
+      if (!cancelled) await loadAllRecipes();
     })();
     return () => { cancelled = true; };
   }, []);
@@ -172,12 +178,21 @@ export default function HomePage() {
     router.push({ pathname: '/recipe-detail', params: { id: String(id) } });
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const q = searchText.trim();
     if (!q) return;
     setActiveSearch(q);
     setCategory('all');
-    // TODO(Ramsey): fetch('/api/recipes/search?q=...')
+    // Try backend search first, fall back to local filter if backend unavailable
+    try {
+      const results = await searchRecipes({ query: q });
+      if (results.length > 0) {
+        setRecipes(results);
+        setDataSource('backend');
+      }
+    } catch {
+      // Backend unavailable — local mock filter will handle it via useMemo
+    }
   };
 
   const clearAll = () => {
@@ -186,6 +201,8 @@ export default function HomePage() {
     setCategory('all');
     setDifficulty('all');
     setTimeFilter('all');
+    // Restore the full recipe list (search may have replaced it with a subset)
+    loadAllRecipes();
   };
 
   const hasAnyFilter =
@@ -251,8 +268,12 @@ export default function HomePage() {
                   style={[styles.pill, category === p.key && styles.pillActive]}
                   onPress={() => {
                     setCategory(p.key);
-                    setActiveSearch('');
-                    setSearchText('');
+                    // If user previously searched, restore full list before filtering
+                    if (activeSearch) {
+                      setActiveSearch('');
+                      setSearchText('');
+                      loadAllRecipes();
+                    }
                   }}
                 >
                   <Text style={[styles.pillText, category === p.key && styles.pillTextActive]}>
