@@ -19,6 +19,8 @@ import org.json.JSONObject;
 @WebServlet("/ratings")
 public class RatingsServlet extends HttpServlet {
 
+	private static final long serialVersionUID = 1L;
+
 	// Method to let .js call the servlet and tell browser response is JSON
     private void setCorsHeaders(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");
