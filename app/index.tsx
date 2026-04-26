@@ -182,10 +182,16 @@ export default function HomePage() {
     const q = searchText.trim();
     if (!q) return;
     setActiveSearch(q);
-    setCategory('all');
-    // Try backend search first, fall back to local filter if backend unavailable
+    // Try backend search with all current filters (Ramsey's RecipeSearchService
+    // supports query + category + difficulty + prepTime combined).
     try {
-      const results = await searchRecipes({ query: q });
+      const params: { query?: string; category?: string; difficulty?: string; prepTime?: string } = { query: q };
+      if (category !== 'all')   params.category = category;
+      if (difficulty !== 'all') params.difficulty = difficulty;
+      if (timeFilter === 'quick')  params.prepTime = '20';
+      if (timeFilter === 'medium') params.prepTime = '40';
+      if (timeFilter === 'long')   params.prepTime = '40+';
+      const results = await searchRecipes(params);
       if (results.length > 0) {
         setRecipes(results);
         setDataSource('backend');
