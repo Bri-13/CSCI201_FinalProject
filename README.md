@@ -76,6 +76,30 @@ CREATE TABLE IF NOT EXISTS ModifiedRecipes (
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY, -- unique ID for each comment
+    recipe_id INT NOT NULL, -- recipe_id for which comment belongs to
+    user_id INT NOT NULL, -- user_id of who wrote the comment
+    comment_text TEXT NOT NULL, -- text conetent of the comment
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_comment_card UNIQUE (recipe_id, user_id) -- constrain to ONE COMMENT CARD PER USER AND RECIPE PAIR
+);
+
+CREATE TABLE IF NOT EXISTS ratings (
+    rating_id INT AUTO_INCREMENT PRIMARY KEY, -- unique ID for each rating
+    recipe_id INT NOT NULL, -- recipe_id of which rating belongs to
+    user_id INT NOT NULL, -- user_id of who gave the rating
+    rating_value INT NOT NULL, -- rating value between 1-5 stars 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT chk_rating_value CHECK (rating_value BETWEEN 1 AND 5), -- constrain to only store valid ratings of between 1-5 stars
+    CONSTRAINT uq_recipe_user_rating UNIQUE (recipe_id, user_id) -- constrain users to only have one rating per recipe
+);
+
+CREATE INDEX idx_comments_recipe_id ON comments(recipe_id); -- index to load all comments for a recipe with recipe_id
+CREATE INDEX idx_ratings_recipe_id ON ratings(recipe_id); -- index to load all ratings for a recipe with recipe_id
+
 3. Configure Database Connection
 go to: backend/src/DBConnection.java
 then update:
