@@ -80,7 +80,7 @@ export default function Profile() {
   const fetchRecipes = async (id: number) => {
     try {
       const url =
-        `http://localhost:8081/my-profile-site/RecipeServlet` +
+        `http://localhost:8080/AuthApp/RecipeServlet` +
         `?action=getUserRecipes&user_id=${id}`;
 
       console.log('Fetching from:', url);
