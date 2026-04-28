@@ -53,47 +53,59 @@ function Recipe({ item }: { item: RecipeItem }) {
 export default function Profile() {
   const router = useRouter();
 
-  const [userId, setUserId] = useState<number | null>(null);
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'recipes' | 'saved'>('recipes');
 
-  // 🔐 Check login on load
+  // 🔐 Check login + load data
   useEffect(() => {
-    checkLogin();
+    init();
   }, []);
 
-  const checkLogin = async () => {
+  const init = async () => {
     const storedUser = await AsyncStorage.getItem('user_id');
 
     if (!storedUser) {
-      router.replace('/login'); // redirect if not logged in
-    } else {
-      const id = Number(storedUser);
-      setUserId(id);
-      fetchRecipes(id);
+      router.replace('/login');
+      return;
     }
+
+    const id = Number(storedUser);
+    setUserId(id);
+
+    fetchRecipes(id);
   };
 
+  // ✅ CONNECTED TO RecipeServlet
   const fetchRecipes = async (id: number) => {
     try {
-      const res = await fetch(
-        `http://localhost:8080/YourApp/RecipeServlet?action=getUserRecipes&user_id=${id}`
-      );
+      const url =
+        `http://localhost:8081/my-profile-site/RecipeServlet` +
+        `?action=getUserRecipes&user_id=${id}`;
 
+      console.log('Fetching from:', url);
+
+      const res = await fetch(url);
       const data = await res.json();
+
+      if (!data.success) {
+        console.error('Backend error:', data);
+        return;
+      }
 
       const formatted = data.recipes.map((item: any) => ({
         title: item.recipe_name,
         meta: `${item.category} • ${item.difficulty} • ${
           item.prep_time + item.cook_time
         } min`,
-        description: item.instructions?.substring(0, 60) + '...',
-        rating: 4,
+        description:
+          item.instructions?.substring(0, 60) + '...',
+        rating: 4, // backend doesn't have ratings yet
       }));
 
       setRecipes(formatted);
     } catch (err) {
-      console.error(err);
+      console.error('Fetch failed:', err);
     }
   };
 
@@ -140,9 +152,11 @@ export default function Profile() {
 
         {/* Content */}
         {activeTab === 'recipes' ? (
-          recipes.map((item, i) => <Recipe key={i} item={item} />)
+          recipes.map((item, i) => (
+            <Recipe key={i} item={item} />
+          ))
         ) : (
-          <Text style={{ textAlign: 'center' }}>
+          <Text style={{ textAlign: 'center', marginTop: 20 }}>
             Saved recipes not implemented yet
           </Text>
         )}
