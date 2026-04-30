@@ -145,30 +145,30 @@ public class RatingsServlet extends HttpServlet {
 	//]
 	private JSONArray getAllRatingsByRecipeJson(Connection conn, int recipeId) throws Exception {
 	
-	 PreparedStatement stmt = conn.prepareStatement(
-	         "SELECT rating_id, recipe_id, user_id, rating_value, created_at, updated_at " +
-	         "FROM ratings WHERE recipe_id = ? " +
-	         "ORDER BY updated_at DESC");
-	
-	 stmt.setInt(1, recipeId);
-	 ResultSet rs = stmt.executeQuery();
-	
-	 JSONArray ratings = new JSONArray();
-	
-	 while (rs.next()) {
-	     JSONObject rating = new JSONObject();
-	
-	     rating.put("rating_id", rs.getInt("rating_id"));
-	     rating.put("recipe_id", rs.getInt("recipe_id"));
-	     rating.put("user_id", rs.getInt("user_id"));
-	     rating.put("rating_value", rs.getInt("rating_value"));
-	     rating.put("created_at", String.valueOf(rs.getTimestamp("created_at")));
-	     rating.put("updated_at", String.valueOf(rs.getTimestamp("updated_at")));
-	
-	     ratings.put(rating);
-	 }
-	
-	 return ratings;
+		 PreparedStatement stmt = conn.prepareStatement(
+		         "SELECT rating_id, recipe_id, user_id, rating_value, created_at, updated_at " +
+		         "FROM ratings WHERE recipe_id = ? " +
+		         "ORDER BY updated_at DESC");
+		
+		 stmt.setInt(1, recipeId);
+		 ResultSet rs = stmt.executeQuery();
+		
+		 JSONArray ratings = new JSONArray();
+		
+		 while (rs.next()) {
+		     JSONObject rating = new JSONObject();
+		
+		     rating.put("rating_id", rs.getInt("rating_id"));
+		     rating.put("recipe_id", rs.getInt("recipe_id"));
+		     rating.put("user_id", rs.getInt("user_id"));
+		     rating.put("rating_value", rs.getInt("rating_value"));
+		     rating.put("created_at", String.valueOf(rs.getTimestamp("created_at")));
+		     rating.put("updated_at", String.valueOf(rs.getTimestamp("updated_at")));
+		
+		     ratings.put(rating);
+		 }
+		
+		 return ratings;
 	}
 
 
