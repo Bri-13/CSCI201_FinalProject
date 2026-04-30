@@ -126,7 +126,7 @@ apache-tomcat-10.x/lib/
 
 5. Compile Backend
 cd backend/src
-javac -cp ".:/path-to-tomcat/lib/*" *.java
+javac -cp ".:/PATH_TO_TOMCAT/lib/*:/PATH_TO_JSON_JAR" *.java
 
 6. Deploy to Tomcat
 cd ..
