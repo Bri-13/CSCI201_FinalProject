@@ -1,20 +1,19 @@
-import java.io.*;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import jakarta.servlet.annotation.WebServlet;
-import java.sql.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+
 @WebServlet("/RecipeServlet")
 public class RecipeServlet extends HttpServlet {
-
-    private void setCorsHeaders(HttpServletResponse response) {
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        response.setContentType("application/json");
-    }
 
     protected void doOptions(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -73,6 +72,21 @@ public class RecipeServlet extends HttpServlet {
                 res.put("success", true);
                 res.put("recipes", recipes);
 
+            }
+            // Search recipes with filters
+            else if ("searchRecipes".equals(action)) {
+
+                String query = request.getParameter("query");
+                String category = request.getParameter("category");
+                String difficulty = request.getParameter("difficulty");
+                String prepTime = request.getParameter("prep_time");
+
+                JSONArray recipes = RecipeSearchService.searchRecipes(
+                        conn, query, category, difficulty, prepTime
+                );
+
+                res.put("success", true);
+                res.put("recipes", recipes);
             } else {
                 res.put("success", false);
                 res.put("message", "Invalid action");
@@ -208,6 +222,13 @@ public class RecipeServlet extends HttpServlet {
         }
 
         response.getWriter().print(res.toString());
+    }
+
+    private void setCorsHeaders(HttpServletResponse response) {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        response.setContentType("application/json");
     }
 
     private JSONObject readJsonBody(HttpServletRequest request) throws Exception {

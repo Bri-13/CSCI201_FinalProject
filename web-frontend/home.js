@@ -14,32 +14,41 @@ let currentIndex     = 0;
 let isLoading        = false;
 let scrollObserver   = null;
 
-// ── COMBINED FILTER ───────────────────────────────────────────
-function getFilteredRecipes() {
-  let results = ALL_RECIPES;
+// ── COMBINED FILTER (BACKEND VERSION) ─────────────────────────
+async function fetchFilteredRecipes() {
 
+  const BASE_URL = "http://YOUR_IP:8080/AuthApp/RecipeServlet";
+
+  let url = `${BASE_URL}?action=searchRecipes`;
+
+  // search
   if (currentSearch) {
-    const q = currentSearch.toLowerCase();
-    results = results.filter(r =>
-      r.title.toLowerCase().includes(q) ||
-      r.tags.some(t => t.includes(q)) ||
-      r.author.toLowerCase().includes(q)
-    );
+    url += `&query=${encodeURIComponent(currentSearch)}`;
   }
 
+  // category
   if (activeCategory !== 'all') {
-    results = results.filter(r => r.tags.includes(activeCategory));
+    url += `&category=${activeCategory}`;
   }
 
+  // difficulty
   if (activeDifficulty !== 'all') {
-    results = results.filter(r => r.difficulty === activeDifficulty);
+    url += `&difficulty=${activeDifficulty}`;
   }
 
-  if (activeTime === 'quick')  results = results.filter(r => r.timeMin <= 20);
-  if (activeTime === 'medium') results = results.filter(r => r.timeMin <= 40);
-  if (activeTime === 'long')   results = results.filter(r => r.timeMin > 40);
+  // time
+  if (activeTime === 'quick')  url += `&prep_time=20`;
+  if (activeTime === 'medium') url += `&prep_time=40`;
+  if (activeTime === 'long')   url += `&prep_time=40+`;
 
-  return results;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.recipes || [];
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    return [];
+  }
 }
 
 // ── RATING HELPERS ────────────────────────────────────────────
@@ -101,10 +110,29 @@ function createMasonryCard(r, batchIndex) {
 }
 
 // ── RENDER: Next batch into masonry grid ──────────────────────
-function renderBatch(reset = false) {
+async function renderBatch(reset = false) {
   const grid  = document.getElementById('masonryGrid');
   const empty = document.getElementById('emptyState');
-  const results = getFilteredRecipes();
+
+  const resultsRaw = await fetchFilteredRecipes();
+
+  // map backend → frontend format
+  const results = resultsRaw.map(r => ({
+    id: r.recipe_id,
+    title: r.recipe_name,
+    author: "@" + r.user_id,
+    time: (r.prep_time || 0) + " min",
+    timeMin: r.prep_time || 0,
+    difficulty: r.difficulty || "Easy",
+    tags: [r.category?.toLowerCase() || ""],
+    displayTags: [r.category || ""],
+    rating: 4.5,
+    ratingCount: 0,
+    commentCount: 0,
+    emoji: "🍽️",
+    bgClass: "bg-orange",
+    imgHeight: 180
+  }));
 
   if (reset) {
     grid.innerHTML = '';
@@ -145,25 +173,21 @@ function disconnectObserver() {
   if (scrollObserver) { scrollObserver.disconnect(); scrollObserver = null; }
 }
 
-// ── SEARCH ────────────────────────────────────────────────────
-// TODO: replace mock filter with → fetch(`/api/recipes/search?q=${query}`) — Ramsey
+// ── SEARCH (BACKEND) ──────────────────────────────────────────
 function handleSearch() {
   const query = document.getElementById('searchInput').value.trim();
   if (!query) return;
+
   currentSearch = query;
 
   document.getElementById('resultBanner').classList.add('visible');
   document.getElementById('resultQuery').textContent = `"${query}"`;
 
-  syncCategoryPills('all');
-  activeCategory = 'all';
-
-  renderBatch(true);
+  renderBatch(true); // 🔥 now fetches from backend
   updateFilterIndicator();
 }
 
 // ── CATEGORY FILTER ───────────────────────────────────────────
-// TODO: replace mock filter with → fetch(`/api/recipes/filter?category=${c}`) — Ramsey
 function setCategory(el, category) {
   activeCategory = category;
   syncCategoryPills(category);
@@ -173,18 +197,8 @@ function setCategory(el, category) {
   document.getElementById('searchInput').value = '';
   document.getElementById('resultBanner').classList.remove('visible');
 
-  renderBatch(true);
+  renderBatch(true); // backend call
   updateFilterIndicator();
-}
-
-function syncCategoryPills(category) {
-  document.querySelectorAll('.pill:not(.chip-difficulty):not(.chip-time):not(.filter-more-btn)')
-    .forEach(p => p.classList.remove('active'));
-  if (category === 'all') {
-    document.querySelectorAll('.pill').forEach(p => {
-      if (p.textContent.trim() === 'All') p.classList.add('active');
-    });
-  }
 }
 
 // ── DIFFICULTY FILTER ─────────────────────────────────────────
@@ -192,7 +206,8 @@ function setDifficulty(el, val) {
   document.querySelectorAll('.chip-difficulty').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeDifficulty = val;
-  renderBatch(true);
+
+  renderBatch(true); // backend call
   updateFilterIndicator();
 }
 
@@ -201,7 +216,8 @@ function setTime(el, val) {
   document.querySelectorAll('.chip-time').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeTime = val;
-  renderBatch(true);
+
+  renderBatch(true); // backend call
   updateFilterIndicator();
 }
 
