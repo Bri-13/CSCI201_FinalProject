@@ -204,6 +204,33 @@ export async function createRecipe(recipe: {
   return data.recipe_id;
 }
 
+// TODO(Christopher): RecipeServlet currently has no `updateRecipe` action.
+// Add a doPost branch on the backend that updates a Recipes row by recipe_id.
+// Until then this returns false and the UI keeps the user's local edits.
+export async function updateRecipe(recipe: {
+  recipe_id: number;
+  user_id: number;
+  recipe_name: string;
+  ingredients: string;
+  instructions: string;
+  prep_time?: number;
+  cook_time?: number;
+  difficulty?: string;
+  category?: string;
+  photo_url?: string;
+}): Promise<boolean> {
+  try {
+    await safeFetch(`${BASE_URL}/RecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateRecipe', ...recipe }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── COMMENTS (Evelyn's CommentsServlet) ─────────────────────
 export type BackendComment = {
   comment_id: number;
@@ -368,22 +395,5 @@ export async function createModifiedRecipe(payload: {
     return data.modified_recipe_id;
   } catch {
     return -1;
-  }
-}
-
-export async function modifyRecipeWithAI(payload: {
-  original_recipe_id: number;
-  user_id: number;
-  prompt: string;
-}): Promise<BackendAiModifiedRecipe | null> {
-  try {
-    const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'modifyRecipeWithAI', ...payload }),
-    });
-    return data.modified_recipe || null;
-  } catch {
-    return null;
   }
 }
