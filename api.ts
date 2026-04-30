@@ -34,6 +34,18 @@ export type BackendModifiedRecipe = BackendRecipe & {
   original_recipe_id: number;
 };
 
+export type BackendNutrition = {
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+};
+
+export type BackendAiModifiedRecipe = BackendModifiedRecipe & {
+  nutrition: BackendNutrition;
+};
+
 // ── ICON GUESSER ────────────────────────────────────────────
 // We don't have photo URLs working yet, so map recipe_name keywords
 // to MaterialCommunityIcons names. Falls back to a generic food icon.
@@ -356,5 +368,22 @@ export async function createModifiedRecipe(payload: {
     return data.modified_recipe_id;
   } catch {
     return -1;
+  }
+}
+
+export async function modifyRecipeWithAI(payload: {
+  original_recipe_id: number;
+  user_id: number;
+  prompt: string;
+}): Promise<BackendAiModifiedRecipe | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'modifyRecipeWithAI', ...payload }),
+    });
+    return data.modified_recipe || null;
+  } catch {
+    return null;
   }
 }

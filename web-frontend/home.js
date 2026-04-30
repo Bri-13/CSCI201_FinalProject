@@ -13,13 +13,12 @@ let currentSearch    = '';
 let currentIndex     = 0;
 let isLoading        = false;
 let scrollObserver   = null;
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:8080/AuthApp`;
+let recipePickerData = [];
 
 // ── COMBINED FILTER (BACKEND VERSION) ─────────────────────────
 async function fetchFilteredRecipes() {
-
-  const BASE_URL = "http://YOUR_IP:8080/AuthApp/RecipeServlet";
-
-  let url = `${BASE_URL}?action=searchRecipes`;
+  let url = `${API_BASE}/RecipeServlet?action=searchRecipes`;
 
   // search
   if (currentSearch) {
@@ -47,6 +46,17 @@ async function fetchFilteredRecipes() {
     return data.recipes || [];
   } catch (err) {
     console.error("Fetch failed:", err);
+    return [];
+  }
+}
+
+async function fetchAllRecipesForPicker() {
+  try {
+    const res = await fetch(`${API_BASE}/RecipeServlet?action=getAllRecipes`);
+    const data = await res.json();
+    return data.recipes || [];
+  } catch (err) {
+    console.error('Failed to load recipe picker list:', err);
     return [];
   }
 }
@@ -379,3 +389,43 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') handleSearch();
   });
 });
+
+async function openRecipePicker() {
+  const modal = document.getElementById('recipePickerModal');
+  const search = document.getElementById('recipePickerSearch');
+  modal.style.display = 'flex';
+  search.value = '';
+  recipePickerData = await fetchAllRecipesForPicker();
+  renderRecipePickerList(recipePickerData);
+}
+
+function closeRecipePicker() {
+  document.getElementById('recipePickerModal').style.display = 'none';
+}
+
+function renderRecipePickerList(recipes) {
+  const list = document.getElementById('recipePickerList');
+  if (!recipes.length) {
+    list.innerHTML = '<p class="modified-empty">No recipes available.</p>';
+    return;
+  }
+  list.innerHTML = recipes.map((r) => `
+    <div class="modal-list-item" onclick="openRecipeForAiModify(${r.recipe_id})">
+      <div>
+        <div class="modified-name">${r.recipe_name}</div>
+        <div class="modified-origin">${r.category || 'Uncategorized'} · ${r.difficulty || 'Easy'}</div>
+      </div>
+      <span class="see-all">Modify →</span>
+    </div>
+  `).join('');
+}
+
+function filterRecipePicker() {
+  const query = document.getElementById('recipePickerSearch').value.trim().toLowerCase();
+  const filtered = recipePickerData.filter((r) => (r.recipe_name || '').toLowerCase().includes(query));
+  renderRecipePickerList(filtered);
+}
+
+function openRecipeForAiModify(recipeId) {
+  window.location.href = `recipe-detail.html?id=${recipeId}&openAiModify=1`;
+}

@@ -14,7 +14,7 @@ import {
 import {
   fetchRecipe, fetchComments, fetchCommentCount,
   addComment, updateComment, deleteComment,
-  fetchRatingSummary, BackendComment,
+  fetchRatingSummary, BackendComment, modifyRecipeWithAI,
 } from '../api';
 import { getUser, subscribe } from '../authStore';
 
@@ -89,6 +89,14 @@ export default function RecipeDetailPage() {
 
   const [isSaved, setIsSaved] = useState(INITIAL_SAVED_IDS.includes(recipeId));
   const [user, setLocalUser] = useState(getUser());
+  const [originalRecipe, setOriginalRecipe] = useState<Recipe | undefined>(undefined);
+  const [originalDetail, setOriginalDetail] = useState<RecipeDetail | undefined>(undefined);
+  const [modifiedRecipe, setModifiedRecipe] = useState<Recipe | undefined>(undefined);
+  const [modifiedDetail, setModifiedDetail] = useState<RecipeDetail | undefined>(undefined);
+  const [showModifiedRecipe, setShowModifiedRecipe] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [modifyingRecipe, setModifyingRecipe] = useState(false);
 
   useEffect(() => {
     const unsub = subscribe((u) => setLocalUser(u));
@@ -99,16 +107,24 @@ export default function RecipeDetailPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setModifiedRecipe(undefined);
+      setModifiedDetail(undefined);
+      setShowModifiedRecipe(false);
+      setShowAiPanel(false);
+      setAiPrompt('');
       const result = await fetchRecipe(recipeId);
       if (cancelled) return;
       if (result) {
         setRecipe(result.recipe);
-        setDetail({
+        const fetchedDetail = {
           ...result.detail,
           description: result.detail.description || mockDetail?.description || '',
           servings:    result.detail.servings    || mockDetail?.servings    || 0,
           nutrition:   mockDetail?.nutrition     || result.detail.nutrition,
-        });
+        };
+        setDetail(fetchedDetail);
+        setOriginalRecipe(result.recipe);
+        setOriginalDetail(fetchedDetail);
       }
       setLoading(false);
     })();
@@ -267,6 +283,77 @@ export default function RecipeDetailPage() {
     // TODO(Shriya): POST/DELETE /api/users/me/saved
   };
 
+  const showOriginalVersion = () => {
+    if (!originalRecipe || !originalDetail) return;
+    setRecipe(originalRecipe);
+    setDetail(originalDetail);
+    setShowModifiedRecipe(false);
+  };
+
+  const showModifiedVersion = () => {
+    if (!modifiedRecipe || !modifiedDetail) return;
+    setRecipe(modifiedRecipe);
+    setDetail(modifiedDetail);
+    setShowModifiedRecipe(true);
+  };
+
+  const handleModifyWithAI = async () => {
+    const prompt = aiPrompt.trim();
+    if (!prompt) {
+      Alert.alert('Prompt required', 'Please describe how you want to modify this recipe.');
+      return;
+    }
+    if (!user) {
+      Alert.alert('Login required', 'Please log in to modify recipes with AI.');
+      return;
+    }
+    if (!originalRecipe || !originalDetail) {
+      Alert.alert('Recipe unavailable', 'Please wait for the recipe to finish loading.');
+      return;
+    }
+
+    setModifyingRecipe(true);
+    const modified = await modifyRecipeWithAI({
+      original_recipe_id: originalRecipe.id,
+      user_id: user.user_id,
+      prompt,
+    });
+    setModifyingRecipe(false);
+
+    if (!modified) {
+      Alert.alert('AI modify failed', 'Could not modify the recipe. Please try again.');
+      return;
+    }
+
+    const splitList = (s: string) => s.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const totalMin = (modified.prep_time || 0) + (modified.cook_time || 0);
+    const updatedRecipe: Recipe = {
+      ...originalRecipe,
+      title: modified.recipe_name || originalRecipe.title,
+      time: totalMin > 0 ? `${totalMin} min` : originalRecipe.time,
+      timeMin: totalMin > 0 ? totalMin : originalRecipe.timeMin,
+      difficulty: modified.difficulty === 'Hard' || modified.difficulty === 'Medium' || modified.difficulty === 'Easy'
+        ? modified.difficulty
+        : originalRecipe.difficulty,
+      tags: modified.category ? [modified.category.toLowerCase()] : originalRecipe.tags,
+      displayTags: modified.category ? [modified.category] : originalRecipe.displayTags,
+    };
+    const updatedDetail: RecipeDetail = {
+      ...originalDetail,
+      ingredients: splitList(modified.ingredients || ''),
+      instructions: splitList(modified.instructions || ''),
+      nutrition: modified.nutrition || originalDetail.nutrition,
+    };
+
+    setModifiedRecipe(updatedRecipe);
+    setModifiedDetail(updatedDetail);
+    setRecipe(updatedRecipe);
+    setDetail(updatedDetail);
+    setShowModifiedRecipe(true);
+    setShowAiPanel(false);
+    setAiPrompt('');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.root}>
@@ -341,11 +428,56 @@ export default function RecipeDetailPage() {
                     {isSaved ? 'Saved' : 'Save'}
                   </Text>
                 </Pressable>
-                <Pressable style={styles.btnAi}>
+                <Pressable style={styles.btnAi} onPress={() => setShowAiPanel(true)}>
                   <Text style={styles.btnAiText}>Modify with AI</Text>
                 </Pressable>
               </View>
             </View>
+
+            {modifiedRecipe && modifiedDetail && (
+              <View style={styles.versionToggleRow}>
+                <Pressable
+                  style={[styles.btnVersion, !showModifiedRecipe && styles.btnVersionActive]}
+                  onPress={showOriginalVersion}>
+                  <Text style={[styles.btnVersionText, !showModifiedRecipe && styles.btnVersionActiveText]}>
+                    See original recipe
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.btnVersion, showModifiedRecipe && styles.btnVersionActive]}
+                  onPress={showModifiedVersion}>
+                  <Text style={[styles.btnVersionText, showModifiedRecipe && styles.btnVersionActiveText]}>
+                    See modified recipe
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {showAiPanel && (
+              <View style={styles.aiPanel}>
+                <Text style={styles.aiPanelTitle}>How should AI modify this recipe?</Text>
+                <TextInput
+                  style={styles.aiPromptInput}
+                  placeholder="Example: Make this high-protein and gluten-free."
+                  placeholderTextColor="#B5A89E"
+                  value={aiPrompt}
+                  onChangeText={setAiPrompt}
+                  multiline
+                  numberOfLines={3}
+                />
+                <View style={styles.aiPanelActions}>
+                  <Pressable style={styles.btnCancelEdit} onPress={() => setShowAiPanel(false)}>
+                    <Text style={styles.btnCancelEditText}>Cancel</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.btnAi, modifyingRecipe && { opacity: 0.7 }]}
+                    onPress={handleModifyWithAI}
+                    disabled={modifyingRecipe}>
+                    <Text style={styles.btnAiText}>{modifyingRecipe ? 'Modifying...' : 'Modify recipe'}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            )}
 
             {/* Content */}
             <View style={[styles.contentGrid, isNarrow && { flexDirection: 'column' }]}>
@@ -425,7 +557,7 @@ export default function RecipeDetailPage() {
                     <Text style={styles.sidebarDesc}>
                       Let AI suggest a healthier, vegan, or allergy-friendly version.
                     </Text>
-                    <Pressable style={styles.btnAi}>
+                    <Pressable style={styles.btnAi} onPress={() => setShowAiPanel(true)}>
                       <Text style={styles.btnAiText}>Try AI Modify {'->'}</Text>
                     </Pressable>
                   </View>
@@ -574,6 +706,15 @@ const styles = StyleSheet.create({
   btnHdrSaveText: { fontSize: 13, fontWeight: '600', color: '#9A8C82' },
   btnAi: { backgroundColor: '#D68C63', paddingHorizontal: 20, paddingVertical: 9, borderRadius: 18, alignItems: 'center', alignSelf: 'flex-start' },
   btnAiText: { color: 'white', fontSize: 13, fontWeight: '600' },
+  versionToggleRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  btnVersion: { backgroundColor: '#ffffff', borderWidth: 1.5, borderColor: '#E8DDD5', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 7 },
+  btnVersionText: { fontSize: 12, fontWeight: '600', color: '#9A8C82' },
+  btnVersionActive: { backgroundColor: '#EBF3EC', borderColor: '#9eaf93' },
+  btnVersionActiveText: { color: '#465143' },
+  aiPanel: { backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1.5, borderColor: '#E8DDD5', padding: 14, marginBottom: 20, gap: 10 },
+  aiPanelTitle: { fontSize: 14, fontWeight: '600', color: '#303030' },
+  aiPromptInput: { minHeight: 70, backgroundColor: '#f3ece0', borderRadius: 10, borderWidth: 1.5, borderColor: '#E8DDD5', padding: 10, fontSize: 13, color: '#303030', textAlignVertical: 'top' },
+  aiPanelActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
 
   contentGrid: { flexDirection: 'row', gap: 32, marginBottom: 40 },
   desc: { fontSize: 14, lineHeight: 22, color: '#5f5d60', marginBottom: 24 },
