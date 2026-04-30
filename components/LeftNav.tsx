@@ -52,10 +52,23 @@ export default function LeftNav({ active = 'home' }: Props) {
         <View style={styles.logoutBtn} />
       )}
 
-      {/* + Upload button — opens the create-recipe form */}
+      {/* + Upload button — opens the create-recipe form (login required) */}
       <Pressable
         style={styles.navPlusButton}
-        onPress={() => router.push('/recipe-edit')}
+        onPress={() => {
+          if (!user) {
+            Alert.alert(
+              'Login required',
+              'Please log in to create a recipe.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Log in', onPress: () => router.push('/login') },
+              ]
+            );
+            return;
+          }
+          router.push('/recipe-edit');
+        }}
       >
         <Text style={styles.navPlusText}>+</Text>
       </Pressable>

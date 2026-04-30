@@ -279,6 +279,17 @@ export default function RecipeDetailPage() {
   };
 
   const toggleSave = () => {
+    if (!user) {
+      Alert.alert(
+        'Login required',
+        'Please log in to save recipes to your profile.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Log in', onPress: () => router.push('/login') },
+        ]
+      );
+      return;
+    }
     setIsSaved((v) => !v);
     // TODO(Shriya): POST/DELETE /api/users/me/saved
   };
@@ -547,7 +558,20 @@ export default function RecipeDetailPage() {
                     <Text style={styles.sidebarDesc}>
                       Let AI suggest a healthier, vegan, or allergy-friendly version.
                     </Text>
-                    <Pressable style={styles.btnAi} onPress={() => setShowAiPanel(true)}>
+                    <Pressable style={styles.btnAi} onPress={() => {
+                      if (!user) {
+                        Alert.alert(
+                          'Login required',
+                          'Please log in to modify recipes with AI.',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Log in', onPress: () => router.push('/login') },
+                          ]
+                        );
+                        return;
+                      }
+                      setShowAiPanel(true);
+                    }}>
                       <Text style={styles.btnAiText}>Try AI Modify {'->'}</Text>
                     </Pressable>
                   </View>

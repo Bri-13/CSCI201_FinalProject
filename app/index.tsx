@@ -8,6 +8,7 @@ import {
   Pressable,
   TextInput,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -183,6 +184,17 @@ export default function HomePage() {
   }, [filteredRecipes]);
 
   const toggleSave = (id: number) => {
+    if (!user) {
+      Alert.alert(
+        'Login required',
+        'Please log in to save recipes to your profile.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Log in', onPress: () => router.push('/login') },
+        ]
+      );
+      return;
+    }
     setSavedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
