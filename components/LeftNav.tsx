@@ -51,10 +51,10 @@ export default function LeftNav({ active = 'home' }: Props) {
         <View style={styles.logoutBtn} />
       )}
 
-      {/* + Upload button */}
+      {/* + Upload button — opens the create-recipe form */}
       <Pressable
         style={styles.navPlusButton}
-        onPress={() => Alert.alert('Coming soon', 'Recipe upload is coming soon!')}
+        onPress={() => router.push('/recipe-edit')}
       >
         <Text style={styles.navPlusText}>+</Text>
       </Pressable>
