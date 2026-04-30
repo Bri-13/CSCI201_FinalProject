@@ -19,8 +19,9 @@ export default function LeftNav({ active = 'home' }: Props) {
   const goHome    = () => router.push('/');
   const goProfile = () => router.push('/profile');
 
-  // Search: go home and the search bar is right there at the top
-  const goSearch  = () => router.push('/');
+  // Search: go home and signal index.tsx to focus the search box.
+  // Each click bumps the timestamp so repeat clicks still trigger focus.
+  const goSearch  = () => router.push({ pathname: '/', params: { focus: 'search', t: String(Date.now()) } });
 
   const handleLogout = () => {
     Alert.alert(

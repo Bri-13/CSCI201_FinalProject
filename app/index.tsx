@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import LeftNav from '../components/LeftNav';
 import {
@@ -82,6 +82,15 @@ export default function HomePage() {
   const { width } = useWindowDimensions();
   const isNarrow = width < 900;
 
+  // Refs for focusing the search input + scrolling to top when LeftNav's
+  // Search button is clicked from this page.
+  const searchInputRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Read URL params: LeftNav passes ?focus=search&t=<timestamp> when its
+  // Search icon is clicked. The timestamp ensures repeat clicks re-trigger.
+  const params = useLocalSearchParams<{ focus?: string; t?: string }>();
+
   const [searchText, setSearchText]     = useState('');
   const [activeSearch, setActiveSearch] = useState('');
   const [category, setCategory]         = useState('all');
@@ -101,6 +110,15 @@ export default function HomePage() {
     const unsub = subscribe((u) => setLocalUser(u));
     return unsub;
   }, []);
+
+  // When LeftNav signals a search focus, scroll to top + focus the input.
+  useEffect(() => {
+    if (params.focus === 'search') {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      // Small delay so the scroll animation doesn't fight with focus on web.
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [params.focus, params.t]);
 
   // Load all recipes from backend (used on mount + after clearing search)
   const loadAllRecipes = async () => {
@@ -220,6 +238,7 @@ export default function HomePage() {
         <LeftNav active="home" />
 
         <ScrollView
+          ref={scrollRef}
           style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -254,6 +273,7 @@ export default function HomePage() {
 
             <View style={styles.searchWrap}>
               <TextInput
+                ref={searchInputRef}
                 style={styles.searchInput}
                 placeholder="Search recipes, ingredients, cuisines..."
                 placeholderTextColor="#B5A89E"
@@ -411,21 +431,6 @@ export default function HomePage() {
 
             {!isNarrow && (
               <View style={styles.sidebar}>
-                <View style={styles.sidebarCard}>
-                  <View style={styles.sidebarTitleRow}>
-                    <Text style={styles.sidebarTitle}>Modify with AI</Text>
-                    <View style={styles.aiBadge}>
-                      <Text style={styles.aiBadgeText}>AI</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.sidebarDesc}>
-                    Open any recipe and let AI suggest a healthier, vegan, or allergy-friendly version.
-                  </Text>
-                  <Pressable style={styles.btnAi}>
-                    <Text style={styles.btnAiText}>Try AI Modify {'->'}</Text>
-                  </Pressable>
-                </View>
-
                 <View style={styles.sidebarCard}>
                   <Text style={styles.sidebarTitle}>Saved Recipes</Text>
                   {SAVED_PREVIEW.map((s, i) => (

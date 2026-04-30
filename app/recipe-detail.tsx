@@ -361,13 +361,6 @@ export default function RecipeDetailPage() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}>
 
-          {/* Back */}
-          <View style={styles.backBar}>
-            <Pressable onPress={() => router.back()}>
-              <Text style={styles.backLink}>{'<- Back'}</Text>
-            </Pressable>
-          </View>
-
           {/* Hero */}
           <View style={[styles.hero, { backgroundColor: recipe.bgColor }]}>
             <MaterialCommunityIcons name={recipe.iconName as any} size={96}
@@ -427,9 +420,6 @@ export default function RecipeDetailPage() {
                   <Text style={[styles.btnHdrSaveText, isSaved && { color: '#465143' }]}>
                     {isSaved ? 'Saved' : 'Save'}
                   </Text>
-                </Pressable>
-                <Pressable style={styles.btnAi} onPress={() => setShowAiPanel(true)}>
-                  <Text style={styles.btnAiText}>Modify with AI</Text>
                 </Pressable>
               </View>
             </View>
