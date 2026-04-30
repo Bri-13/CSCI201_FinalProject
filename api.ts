@@ -358,3 +358,48 @@ export async function createModifiedRecipe(payload: {
     return -1;
   }
 }
+
+// ── AI RECIPE MODIFICATION VIA BACKEND ───────────────────────
+
+export type ModifiedRecipeWithNutrition = {
+  modified_recipe_id: number;
+  recipe_name: string;
+  ingredients: string;
+  instructions: string;
+  prep_time: number;
+  cook_time: number;
+  difficulty: string;
+  category: string;
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+};
+
+export async function modifyRecipeWithAI(
+  originalRecipeId: number,
+  userId: number,
+  userPrompt: string
+): Promise<ModifiedRecipeWithNutrition | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'modifyWithAI',
+        original_recipe_id: originalRecipeId,
+        user_id: userId,
+        user_prompt: userPrompt,
+      }),
+    });
+
+    if (data.success && data.modified_recipe) {
+      return data.modified_recipe;
+    }
+    return null;
+  } catch (err) {
+    console.error('AI modification error:', err);
+    return null;
+  }
+}
