@@ -126,15 +126,17 @@ apache-tomcat-10.x/lib/
 
 5. Compile Backend
 cd backend/src
+[Note: find path to tomcat with this command: find ~ -type d -path "*apache-tomcat*/bin"]
+[Note: find path to Json jar with this command: find ~ -name "*.jar" 2>/dev/null | grep json]
 javac -cp ".:/PATH_TO_TOMCAT/lib/*:/PATH_TO_JSON_JAR" *.java
 
-6. Deploy to Tomcat
+7. Deploy to Tomcat
 cd ..
 mkdir -p AuthApp/WEB-INF/classes
 mv src/*.class AuthApp/WEB-INF/classes/
 cp -r AuthApp /path-to-tomcat/webapps/
 
-7. Restart Tomcat
+8. Restart Tomcat
 
 cd /path-to-tomcat/bin
 ./shutdown.sh
