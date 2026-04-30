@@ -22,7 +22,7 @@ import {
   INITIAL_SAVED_IDS,
   Recipe,
 } from '../data';
-import { fetchAllRecipes, searchRecipes } from '../api';
+import { fetchAllRecipes, searchRecipes, fetchRecommendedRecipes } from '../api';
 import { getUser, subscribe } from '../authStore';
 
 // ── small reusable bits ──────────────────────────────────────
@@ -97,9 +97,7 @@ export default function HomePage() {
   const [category, setCategory]         = useState('all');
   const [difficulty, setDifficulty]     = useState('all');
   const [timeFilter, setTimeFilter]     = useState('all');
-  const [savedIds, setSavedIds]         = useState<Set<number>>(
-    new Set(INITIAL_SAVED_IDS)
-  );
+  const [savedIds, setSavedIds]         = useState<Set<number>>(new Set());
   const [filterOpen, setFilterOpen]     = useState(false);
   const [user, setLocalUser]            = useState(getUser());
 
@@ -107,10 +105,34 @@ export default function HomePage() {
   const [recipes, setRecipes]           = useState<Recipe[]>(ALL_RECIPES);
   const [dataSource, setDataSource]     = useState<'loading' | 'backend' | 'mock'>('loading');
 
+  // Recommended recipes — only shown to logged-in users.
+  const [recommended, setRecommended] = useState<Recipe[]>([]);
+
   useEffect(() => {
     const unsub = subscribe((u) => setLocalUser(u));
     return unsub;
   }, []);
+
+  // Clear local saved-recipe state when the user logs out so the heart icons
+  // don't keep showing as filled. (Once backend save endpoint exists, this
+  // will be replaced by fetching the user's saved list on login.)
+  useEffect(() => {
+    if (!user) setSavedIds(new Set());
+  }, [user]);
+
+  // Load personalized recommendations when the user logs in.
+  useEffect(() => {
+    if (!user) {
+      setRecommended([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const rows = await fetchRecommendedRecipes(user.user_id);
+      if (!cancelled) setRecommended(rows);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.user_id]);
 
   // When LeftNav signals a search focus, scroll to top + focus the input.
   useEffect(() => {
@@ -324,8 +346,13 @@ export default function HomePage() {
                 onPress={() => setFilterOpen((v) => !v)}
               >
                 <Text style={styles.pillMoreText}>
-                  {filterOpen ? 'Less' : 'More Filters'}
+                  {filterOpen ? 'Hide Filters' : 'More Filters'}
                 </Text>
+                <Feather
+                  name={filterOpen ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color="#5f5d60"
+                />
               </Pressable>
               {hasAnyFilter && <Text style={styles.filterIndicator}>• Filtered</Text>}
             </View>
@@ -393,6 +420,47 @@ export default function HomePage() {
                   <Text style={styles.sampleBannerText}>
                     Showing sample recipes (backend not connected or database empty)
                   </Text>
+                </View>
+              )}
+
+              {/* Personalized recommendations — only shown when logged in
+                  AND we're not currently showing search results. */}
+              {user && recommended.length > 0 && !activeSearch && category === 'all' && (
+                <View style={styles.recSection}>
+                  <View style={styles.recHeader}>
+                    <Text style={styles.recTitle}>Recommended for you</Text>
+                    <Text style={styles.recSubtitle}>Based on what you've saved</Text>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.recScroll}
+                  >
+                    {recommended.map((r) => (
+                      <Pressable
+                        key={`rec-${r.id}`}
+                        style={[styles.recCard, { backgroundColor: r.bgColor }]}
+                        onPress={() => openRecipe(r.id)}
+                      >
+                        <View style={styles.recIcon}>
+                          <MaterialCommunityIcons
+                            name={r.iconName as any}
+                            size={36}
+                            color="rgba(255,255,255,0.95)"
+                          />
+                        </View>
+                        <View style={styles.recCardBody}>
+                          <Text style={styles.recCardTitle} numberOfLines={1}>{r.title}</Text>
+                          <View style={styles.recCardMeta}>
+                            <StarRow rating={r.rating} size={10} />
+                            <Text style={styles.recCardMetaText}>
+                              {r.rating.toFixed(1)} · {r.time}
+                            </Text>
+                          </View>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
                 </View>
               )}
 
@@ -643,7 +711,7 @@ const styles = StyleSheet.create({
   pillActive: { backgroundColor: '#9eaf93', borderColor: '#9eaf93' },
   pillText: { fontSize: 12, color: '#5f5d60', fontWeight: '500' },
   pillTextActive: { color: 'white' },
-  pillMore: { borderColor: '#303030' },
+  pillMore: { borderColor: '#303030', flexDirection: 'row', alignItems: 'center', gap: 4 },
   pillMoreText: { fontSize: 12, color: '#303030', fontWeight: '600' },
   filterIndicator: {
     fontSize: 11, color: '#D68C63', fontWeight: '600',
@@ -707,6 +775,24 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: 14,
   },
   sectionTitle: { fontSize: 20, fontWeight: '600', color: '#303030' },
+
+  // Recommended for you — horizontal scroll cards
+  recSection: { marginBottom: 24 },
+  recHeader: { marginBottom: 10 },
+  recTitle: { fontSize: 17, fontWeight: '600', color: '#303030' },
+  recSubtitle: { fontSize: 11, color: '#9A8C82', marginTop: 2 },
+  recScroll: { gap: 12, paddingRight: 16 },
+  recCard: {
+    width: 220, borderRadius: 14, overflow: 'hidden',
+    borderWidth: 1, borderColor: '#E8DDD5', backgroundColor: '#ffffff',
+  },
+  recIcon: {
+    height: 110, alignItems: 'center', justifyContent: 'center',
+  },
+  recCardBody: { padding: 12, backgroundColor: '#ffffff' },
+  recCardTitle: { fontSize: 14, fontWeight: '600', color: '#303030', marginBottom: 4 },
+  recCardMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  recCardMetaText: { fontSize: 11, color: '#9A8C82' },
 
   emptyState: { alignItems: 'center', paddingVertical: 40, gap: 10 },
   emptyText: { fontSize: 14, color: '#9A8C82' },

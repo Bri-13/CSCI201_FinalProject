@@ -340,6 +340,43 @@ export async function fetchRatingSummary(recipeId: number): Promise<RatingSummar
   }
 }
 
+export type IndividualRating = {
+  rating_id: number;
+  recipe_id: number;
+  user_id: number;
+  rating_value: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Returns every individual rating for a recipe (used when user taps the
+// rating count to see all ratings).
+export async function fetchAllRatings(recipeId: number): Promise<IndividualRating[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ratings?action=getAllRatingsByRecipe&recipe_id=${recipeId}`
+    );
+    return data.ratings || [];
+  } catch {
+    return [];
+  }
+}
+
+// ── RECOMMENDATIONS (Evelyn's RecommendServlet) ──────────────
+// If user has saved recipes: similar category/difficulty/time/rating.
+// If user has no saved recipes: top 8 highest rated.
+export async function fetchRecommendedRecipes(userId: number): Promise<Recipe[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/recommend?action=getRecommendedRecipes&user_id=${userId}`
+    );
+    const rows: BackendRecipe[] = data.recommendations || [];
+    return rows.map(normalizeRecipe);
+  } catch {
+    return [];
+  }
+}
+
 // ── SEARCH (Ramsey's RecipeSearchService via RecipeServlet) ──
 export async function searchRecipes(params: {
   query?: string;

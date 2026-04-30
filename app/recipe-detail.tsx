@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView,
-  Pressable, TextInput, Alert, useWindowDimensions,
+  Pressable, TextInput, Alert, useWindowDimensions, Modal,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Octicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -15,6 +15,7 @@ import {
   fetchRecipe, fetchComments, fetchCommentCount,
   addComment, updateComment, deleteComment,
   fetchRatingSummary, BackendComment, modifyRecipeWithAI,
+  fetchAllRatings, IndividualRating,
 } from '../api';
 import { getUser, subscribe } from '../authStore';
 
@@ -73,6 +74,11 @@ export default function RecipeDetailPage() {
   const [avgRating, setAvgRating] = useState(mockRecipe?.rating || 0);
   const [ratingCount, setRatingCount] = useState(mockRecipe?.ratingCount || 0);
 
+  // Ratings detail modal — shown when user taps the rating count
+  const [ratingsModalOpen, setRatingsModalOpen] = useState(false);
+  const [allRatings, setAllRatings] = useState<IndividualRating[]>([]);
+  const [loadingRatings, setLoadingRatings] = useState(false);
+
   // Comments from backend (falls back to mock)
   const [comments, setComments] = useState<BackendComment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
@@ -87,7 +93,7 @@ export default function RecipeDetailPage() {
   const [editText, setEditText] = useState('');
   const [editRating, setEditRating] = useState(0);
 
-  const [isSaved, setIsSaved] = useState(INITIAL_SAVED_IDS.includes(recipeId));
+  const [isSaved, setIsSaved] = useState(false);
   const [user, setLocalUser] = useState(getUser());
   const [originalRecipe, setOriginalRecipe] = useState<Recipe | undefined>(undefined);
   const [originalDetail, setOriginalDetail] = useState<RecipeDetail | undefined>(undefined);
@@ -102,6 +108,11 @@ export default function RecipeDetailPage() {
     const unsub = subscribe((u) => setLocalUser(u));
     return unsub;
   }, []);
+
+  // Clear local saved state when user logs out (heart icon should reset).
+  useEffect(() => {
+    if (!user) setIsSaved(false);
+  }, [user]);
 
   // Fetch recipe from backend
   useEffect(() => {
@@ -278,6 +289,16 @@ export default function RecipeDetailPage() {
     ]);
   };
 
+  const openRatingsModal = async () => {
+    setRatingsModalOpen(true);
+    if (allRatings.length === 0) {
+      setLoadingRatings(true);
+      const ratings = await fetchAllRatings(recipeId);
+      setAllRatings(ratings);
+      setLoadingRatings(false);
+    }
+  };
+
   const toggleSave = () => {
     if (!user) {
       Alert.alert(
@@ -414,7 +435,9 @@ export default function RecipeDetailPage() {
                     <>
                       <StarRow rating={avgRating} />
                       <Text style={styles.ratingNum}>{avgRating.toFixed(1)}</Text>
-                      <Text style={styles.ratingCount}>· {formatCount(ratingCount)} ratings</Text>
+                      <Pressable onPress={openRatingsModal}>
+                        <Text style={styles.ratingCountClickable}>· {formatCount(ratingCount)} ratings</Text>
+                      </Pressable>
                       <Text style={styles.commentCount}>{'  '}💬 {formatCount(commentCount)}</Text>
                     </>
                   ) : (
@@ -678,6 +701,50 @@ export default function RecipeDetailPage() {
             </View>
           </View>
         </ScrollView>
+
+        {/* Ratings detail modal — shows every individual rating for this recipe */}
+        <Modal
+          visible={ratingsModalOpen}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setRatingsModalOpen(false)}
+        >
+          <Pressable style={styles.modalBackdrop} onPress={() => setRatingsModalOpen(false)}>
+            <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>All Ratings ({ratingCount})</Text>
+                <Pressable onPress={() => setRatingsModalOpen(false)} hitSlop={8}>
+                  <Feather name="x" size={20} color="#5f5d60" />
+                </Pressable>
+              </View>
+              <View style={styles.modalSummary}>
+                <StarRow rating={avgRating} size={16} />
+                <Text style={styles.modalSummaryNum}>{avgRating.toFixed(1)}</Text>
+                <Text style={styles.modalSummaryNote}>average</Text>
+              </View>
+              <ScrollView style={{ maxHeight: 360 }}>
+                {loadingRatings ? (
+                  <Text style={styles.modalEmpty}>Loading...</Text>
+                ) : allRatings.length === 0 ? (
+                  <Text style={styles.modalEmpty}>No ratings yet.</Text>
+                ) : (
+                  allRatings.map((r) => (
+                    <View key={r.rating_id} style={styles.ratingRowItem}>
+                      <View style={styles.ratingAvatar}>
+                        <Text style={styles.ratingAvatarText}>U</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.ratingUser}>User #{r.user_id}</Text>
+                        <Text style={styles.ratingDate}>{r.created_at}</Text>
+                      </View>
+                      <StarRow rating={r.rating_value} size={13} />
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -712,6 +779,40 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   ratingNum: { fontSize: 13, fontWeight: '500', color: '#303030', marginLeft: 4 },
   ratingCount: { fontSize: 13, color: '#9A8C82' },
+  ratingCountClickable: { fontSize: 13, color: '#D68C63', textDecorationLine: 'underline' },
+
+  // Ratings detail modal
+  modalBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center', justifyContent: 'center', padding: 20,
+  },
+  modalCard: {
+    width: '100%', maxWidth: 480,
+    backgroundColor: '#ffffff', borderRadius: 16, padding: 18,
+  },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: 12, paddingBottom: 10,
+    borderBottomWidth: 1.5, borderBottomColor: '#E8DDD5',
+  },
+  modalTitle: { fontSize: 17, fontWeight: '600', color: '#303030' },
+  modalSummary: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12,
+  },
+  modalSummaryNum: { fontSize: 15, fontWeight: '600', color: '#303030', marginLeft: 4 },
+  modalSummaryNote: { fontSize: 12, color: '#9A8C82' },
+  modalEmpty: { fontSize: 13, color: '#9A8C82', textAlign: 'center', paddingVertical: 24 },
+  ratingRowItem: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3ece0',
+  },
+  ratingAvatar: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: '#9eaf93', alignItems: 'center', justifyContent: 'center',
+  },
+  ratingAvatarText: { color: 'white', fontWeight: '600', fontSize: 13 },
+  ratingUser: { fontSize: 13, fontWeight: '500', color: '#303030' },
+  ratingDate: { fontSize: 11, color: '#9A8C82', marginTop: 2 },
   commentCount: { fontSize: 13, color: '#9A8C82' },
 
   headerActions: { gap: 10 },
