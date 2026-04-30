@@ -97,6 +97,16 @@ CREATE TABLE IF NOT EXISTS ratings (
     CONSTRAINT uq_recipe_user_rating UNIQUE (recipe_id, user_id) -- constrain users to only have one rating per recipe
 );
 
+CREATE TABLE IF NOT EXISTS SavedRecipes (
+    saved_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    recipe_id INT NOT NULL,
+    saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_user_recipe UNIQUE (user_id, recipe_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES Recipes(recipe_id) ON DELETE CASCADE
+);
+
 CREATE INDEX idx_comments_recipe_id ON comments(recipe_id); -- index to load all comments for a recipe with recipe_id
 CREATE INDEX idx_ratings_recipe_id ON ratings(recipe_id); -- index to load all ratings for a recipe with recipe_id
 
