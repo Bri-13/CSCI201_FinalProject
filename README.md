@@ -173,6 +173,30 @@ Windows: ipconfig
 Then replace BASE_URL:
 http://YOUR_IP:8080/AuthApp/
 
+## Unit Tests
+
+### Setup
+
+Test dependencies (`jest`, `ts-jest`, `@types/jest`) are included in `devDependencies`. Install them with:
+
+```bash
+npm install
+```
+
+### Running Tests
+
+```bash
+npm test
+```
+
+### What's Tested
+
+Tests live in the `__tests__/` folder:
+
+- **authStore.test.ts** — Auth state management: setting/clearing the current user, login state, subscriber notifications, and unsubscribe cleanup.
+- **api.test.ts** — Backend-to-frontend data normalization: field mapping, difficulty/time/category handling, icon guessing by recipe name, ingredient/instruction parsing from newline-separated text.
+- **data.test.ts** — Mock data integrity: unique recipe IDs, required fields present with valid ranges, all cross-references (popular IDs, saved IDs, comments) point to real recipes.
+
 ## Get a fresh project
 
 When you're ready, run:
