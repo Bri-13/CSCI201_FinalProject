@@ -8,9 +8,17 @@
 // ── LOAD RECIPE FROM URL PARAM ────────────────────────────────
 const params   = new URLSearchParams(window.location.search);
 const recipeId = parseInt(params.get('id'));
+const openAiModifyOnLoad = params.get('openAiModify') === '1';
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:8080/AuthApp`;
 
 const recipe = ALL_RECIPES.find(r => r.id === recipeId) || null;
 const detail = (RECIPE_DETAILS && RECIPE_DETAILS[recipeId]) || null;
+let activeRecipe = recipe ? { ...recipe } : null;
+let activeDetail = detail ? JSON.parse(JSON.stringify(detail)) : null;
+let originalRecipe = activeRecipe ? { ...activeRecipe } : null;
+let originalDetail = activeDetail ? JSON.parse(JSON.stringify(activeDetail)) : null;
+let modifiedRecipe = null;
+let modifiedDetail = null;
 
 // ── STATE ─────────────────────────────────────────────────────
 let isSaved      = INITIAL_SAVED_IDS.includes(recipeId);
@@ -32,45 +40,94 @@ function formatCount(n) {
   return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 }
 
+function pickBgClass(id) {
+  const classes = ['bg-orange', 'bg-green', 'bg-tan', 'bg-purple', 'bg-pink', 'bg-blue'];
+  return classes[id % classes.length];
+}
+
+function pickEmoji(title = '') {
+  const t = title.toLowerCase();
+  if (t.includes('pasta') || t.includes('ramen') || t.includes('noodle')) return '🍜';
+  if (t.includes('pizza')) return '🍕';
+  if (t.includes('salad') || t.includes('vegan')) return '🥗';
+  if (t.includes('cake') || t.includes('dessert')) return '🍰';
+  return '🍽️';
+}
+
+async function loadRecipeFromBackend() {
+  try {
+    const res = await fetch(`${API_BASE}/RecipeServlet?action=getRecipe&recipe_id=${recipeId}`);
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.recipe) return;
+    const r = data.recipe;
+    const totalMin = (r.prep_time || 0) + (r.cook_time || 0);
+    const fallbackNutrition = detail?.nutrition || { calories: 0, protein: '—', carbs: '—', fat: '—', fiber: '—' };
+    activeRecipe = {
+      id: r.recipe_id,
+      emoji: recipe?.emoji || pickEmoji(r.recipe_name),
+      bgClass: recipe?.bgClass || pickBgClass(r.recipe_id),
+      imgHeight: recipe?.imgHeight || 180,
+      title: r.recipe_name,
+      author: recipe?.author || `@user${r.user_id}`,
+      time: totalMin > 0 ? `${totalMin} min` : '—',
+      timeMin: totalMin,
+      difficulty: r.difficulty || 'Easy',
+      tags: r.category ? [String(r.category).toLowerCase()] : [],
+      displayTags: r.category ? [String(r.category)] : [],
+      rating: recipe?.rating || 0,
+      ratingCount: recipe?.ratingCount || 0,
+      commentCount: recipe?.commentCount || 0,
+    };
+    activeDetail = {
+      description: detail?.description || '',
+      servings: detail?.servings || 0,
+      ingredients: splitTextBlob(r.ingredients),
+      instructions: splitTextBlob(r.instructions),
+      nutrition: fallbackNutrition,
+    };
+    originalRecipe = { ...activeRecipe };
+    originalDetail = JSON.parse(JSON.stringify(activeDetail));
+  } catch (err) {
+    console.error('Failed to load recipe detail from backend:', err);
+  }
+}
+
 // ── RENDER PAGE ───────────────────────────────────────────────
 function renderPage() {
-  if (!recipe) {
+  if (!activeRecipe) {
     document.getElementById('detailTitle').textContent = 'Recipe not found.';
     return;
   }
 
-  document.title = `${recipe.title} – Homebite`;
+  document.title = `${activeRecipe.title} – Homebite`;
 
   // Hero
   const hero = document.getElementById('detailHero');
-  hero.classList.add(recipe.bgClass);
-  document.getElementById('detailEmoji').textContent = recipe.emoji;
-
-  // AI modify link — pass recipe id as query param for Alex's page
-  document.getElementById('detailAiBtn').href =
-    `recipe-create.html?sourceId=${recipe.id}`;
+  hero.className = 'detail-hero';
+  hero.classList.add(activeRecipe.bgClass);
+  document.getElementById('detailEmoji').textContent = activeRecipe.emoji;
 
   // Tags
   document.getElementById('detailTags').innerHTML =
-    recipe.displayTags.map(t => `<span class="tag">${t}</span>`).join('');
+    activeRecipe.displayTags.map(t => `<span class="tag">${t}</span>`).join('');
 
   // Title + author
-  document.getElementById('detailTitle').textContent = recipe.title;
-  document.getElementById('detailAuthor').textContent = `by ${recipe.author}`;
+  document.getElementById('detailTitle').textContent = activeRecipe.title;
+  document.getElementById('detailAuthor').textContent = `by ${activeRecipe.author}`;
 
   // Meta pills
-  const servings = detail ? detail.servings : '—';
+  const servings = activeDetail ? activeDetail.servings : '—';
   document.getElementById('detailMeta').innerHTML = `
-    <span class="meta-pill">⏱ ${recipe.time}</span>
-    <span class="meta-pill">📊 ${recipe.difficulty}</span>
+    <span class="meta-pill">⏱ ${activeRecipe.time}</span>
+    <span class="meta-pill">📊 ${activeRecipe.difficulty}</span>
     <span class="meta-pill">👥 ${servings} servings</span>
   `;
 
   // Rating row
   document.getElementById('detailRatingRow').innerHTML = `
-    <span class="detail-stars">${renderStarsHtml(recipe.rating)}</span>
-    <span class="detail-rating-num">${recipe.rating} · ${formatCount(recipe.ratingCount)} ratings</span>
-    <span class="detail-comment-count">💬 ${formatCount(recipe.commentCount)}</span>
+    <span class="detail-stars">${renderStarsHtml(activeRecipe.rating)}</span>
+    <span class="detail-rating-num">${activeRecipe.rating} · ${formatCount(activeRecipe.ratingCount)} ratings</span>
+    <span class="detail-comment-count">💬 ${formatCount(activeRecipe.commentCount)}</span>
   `;
 
   // Save button state
@@ -78,20 +135,21 @@ function renderPage() {
 
   // Description
   document.getElementById('detailDesc').textContent =
-    detail ? detail.description : 'Full recipe details coming soon.';
+    activeDetail ? activeDetail.description : 'Full recipe details coming soon.';
 
   // Servings
   document.getElementById('detailServings').textContent =
-    detail ? `Makes ${detail.servings} servings` : '';
+    activeDetail ? `Makes ${activeDetail.servings} servings` : '';
 
   // Ingredients
-  renderIngredients(detail ? detail.ingredients : []);
+  renderIngredients(activeDetail ? activeDetail.ingredients : []);
 
   // Instructions
-  renderSteps(detail ? detail.instructions : []);
+  renderSteps(activeDetail ? activeDetail.instructions : []);
 
   // Nutrition
-  renderNutrition(detail ? detail.nutrition : null);
+  renderNutrition(activeDetail ? activeDetail.nutrition : null);
+  renderVersionToggles();
 
   // Comments
   renderComments();
@@ -159,6 +217,113 @@ function updateSaveBtn() {
     btn.textContent = '♡ Save';
     btn.classList.remove('saved');
   }
+}
+
+function openAiModifyModal() {
+  document.getElementById('aiModifyModal').style.display = 'flex';
+}
+
+function closeAiModifyModal() {
+  document.getElementById('aiModifyModal').style.display = 'none';
+}
+
+async function submitAiModify() {
+  const prompt = document.getElementById('aiPromptInput').value.trim();
+  if (!prompt) {
+    alert('Please enter a modification prompt.');
+    return;
+  }
+  const userIdRaw = localStorage.getItem('user_id');
+  const userId = parseInt(userIdRaw || '', 10);
+  if (!userId || Number.isNaN(userId)) {
+    alert('Please log in first so the modified recipe can be saved to your account.');
+    return;
+  }
+  const btn = document.getElementById('submitAiModifyBtn');
+  btn.disabled = true;
+  btn.textContent = 'Modifying...';
+
+  try {
+    const res = await fetch(`${API_BASE}/ModifiedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'modifyRecipeWithAI',
+        original_recipe_id: recipeId,
+        user_id: userId,
+        prompt,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.modified_recipe) {
+      throw new Error(data.message || 'Failed to modify recipe');
+    }
+    const mod = data.modified_recipe;
+    if (!activeRecipe || !activeDetail) {
+      throw new Error('Recipe has not loaded yet. Please refresh and try again.');
+    }
+    modifiedRecipe = {
+      ...activeRecipe,
+      title: mod.recipe_name || activeRecipe.title,
+      difficulty: mod.difficulty || activeRecipe.difficulty,
+      time: `${(mod.prep_time || 0) + (mod.cook_time || 0)} min`,
+      tags: mod.category ? [mod.category.toLowerCase()] : activeRecipe.tags,
+      displayTags: mod.category ? [mod.category] : activeRecipe.displayTags,
+    };
+    modifiedDetail = {
+      ...activeDetail,
+      ingredients: splitTextBlob(mod.ingredients),
+      instructions: splitTextBlob(mod.instructions),
+      nutrition: mod.nutrition || activeDetail.nutrition,
+    };
+    activeRecipe = modifiedRecipe;
+    activeDetail = modifiedDetail;
+    closeAiModifyModal();
+    document.getElementById('aiPromptInput').value = '';
+    renderPage();
+  } catch (err) {
+    alert(err.message || 'Unable to modify recipe right now.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Modify recipe';
+  }
+}
+
+function splitTextBlob(value) {
+  return (value || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function renderVersionToggles() {
+  const existing = document.getElementById('recipeVersionRow');
+  if (existing) existing.remove();
+  if (!modifiedRecipe || !modifiedDetail || !originalRecipe || !originalDetail) return;
+  const row = document.createElement('div');
+  row.id = 'recipeVersionRow';
+  row.className = 'recipe-version-row';
+  const isModified = activeRecipe === modifiedRecipe;
+  row.innerHTML = `
+    <button class="btn-version ${!isModified ? 'active' : ''}" onclick="showOriginalRecipe()">See original recipe</button>
+    <button class="btn-version ${isModified ? 'active' : ''}" onclick="showModifiedRecipe()">See modified recipe</button>
+  `;
+  const header = document.querySelector('.detail-header');
+  header.insertAdjacentElement('afterend', row);
+}
+
+function showOriginalRecipe() {
+  if (!originalRecipe || !originalDetail) return;
+  activeRecipe = { ...originalRecipe };
+  activeDetail = JSON.parse(JSON.stringify(originalDetail));
+  renderPage();
+}
+
+function showModifiedRecipe() {
+  if (!modifiedRecipe || !modifiedDetail) return;
+  activeRecipe = { ...modifiedRecipe };
+  activeDetail = JSON.parse(JSON.stringify(modifiedDetail));
+  renderPage();
 }
 
 // ── COMMENTS ──────────────────────────────────────────────────
@@ -283,7 +448,13 @@ function setGuestMode() {
 
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  renderPage();
-  initInteractiveStars();
-  initAuthState();
+  (async () => {
+    await loadRecipeFromBackend();
+    renderPage();
+    initInteractiveStars();
+    initAuthState();
+    if (openAiModifyOnLoad) {
+      openAiModifyModal();
+    }
+  })();
 });

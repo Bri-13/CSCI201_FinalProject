@@ -65,9 +65,9 @@
         ♡ Save
       </button>
       <!-- Links to Alex's recipe-create page (Shriya's AI editor) -->
-      <a id="detailAiBtn" href="recipe-create.html" class="btn-detail-ai">
+      <button id="detailAiBtn" class="btn-detail-ai" onclick="openAiModifyModal()">
         ✨ Modify with AI
-      </a>
+      </button>
     </div>
   </div>
 
@@ -111,7 +111,7 @@
         <p class="ai-cta-desc">
           Let AI suggest a healthier, vegan, or allergy-friendly version of this recipe.
         </p>
-        <a href="recipe-create.html" class="btn-ai-cta">Try AI Modify →</a>
+        <button class="btn-ai-cta" onclick="openAiModifyModal()">Try AI Modify →</button>
       </div>
 
     </aside>
@@ -162,5 +162,19 @@
 
 <script src="data.js"></script>
 <script src="recipe-detail.js"></script>
+
+<div id="aiModifyModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Modify recipe with AI</h3>
+      <button class="modal-close" onclick="closeAiModifyModal()">×</button>
+    </div>
+    <textarea id="aiPromptInput" class="modal-input ai-textarea" rows="4" placeholder="Example: make this gluten-free and higher protein."></textarea>
+    <div class="ai-modal-actions">
+      <button class="btn-clear" onclick="closeAiModifyModal()">Cancel</button>
+      <button class="btn-ai-cta" id="submitAiModifyBtn" onclick="submitAiModify()">Modify recipe</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

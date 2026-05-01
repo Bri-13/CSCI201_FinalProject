@@ -469,3 +469,36 @@
   text-align: center;
   padding: 32px 0;
 }
+
+.recipe-version-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.btn-version {
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 7px 14px;
+  background: var(--white);
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-version.active {
+  border-color: var(--green);
+  background: #EBF3EC;
+  color: var(--green);
+}
+
+.ai-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.ai-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

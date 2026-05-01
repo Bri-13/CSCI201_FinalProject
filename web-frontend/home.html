@@ -164,7 +164,7 @@
       <p class="ai-cta-desc">
         Open any recipe and let AI suggest a healthier, vegan, or allergy-friendly version.
       </p>
-      <a href="recipe-create.html" class="btn-ai-cta">Try AI Modify →</a>
+      <button class="btn-ai-cta" onclick="openRecipePicker()">Try AI Modify →</button>
     </div>
 
     <!-- Saved Recipes preview -->
@@ -199,6 +199,17 @@
 <!-- Scripts: data.js must come before home.js -->
 <script src="data.js"></script>
 <script src="home.js"></script>
+
+<div id="recipePickerModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Select a recipe to modify</h3>
+      <button class="modal-close" onclick="closeRecipePicker()">×</button>
+    </div>
+    <input id="recipePickerSearch" class="modal-input" placeholder="Search recipes..." oninput="filterRecipePicker()" />
+    <div id="recipePickerList" class="modal-list"></div>
+  </div>
+</div>
 
 </body>
 </html>

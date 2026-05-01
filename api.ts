@@ -34,6 +34,18 @@ export type BackendModifiedRecipe = BackendRecipe & {
   original_recipe_id: number;
 };
 
+export type BackendNutrition = {
+  calories: number;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+};
+
+export type BackendAiModifiedRecipe = BackendModifiedRecipe & {
+  nutrition: BackendNutrition;
+};
+
 // ── ICON GUESSER ────────────────────────────────────────────
 // We don't have photo URLs working yet, so map recipe_name keywords
 // to MaterialCommunityIcons names. Falls back to a generic food icon.
@@ -192,12 +204,211 @@ export async function createRecipe(recipe: {
   return data.recipe_id;
 }
 
+// TODO(Christopher): RecipeServlet currently has no `updateRecipe` action.
+// Add a doPost branch on the backend that updates a Recipes row by recipe_id.
+// Until then this returns false and the UI keeps the user's local edits.
+export async function updateRecipe(recipe: {
+  recipe_id: number;
+  user_id: number;
+  recipe_name: string;
+  ingredients: string;
+  instructions: string;
+  prep_time?: number;
+  cook_time?: number;
+  difficulty?: string;
+  category?: string;
+  photo_url?: string;
+}): Promise<boolean> {
+  try {
+    await safeFetch(`${BASE_URL}/RecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateRecipe', ...recipe }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── COMMENTS (Evelyn's CommentsServlet) ─────────────────────
+export type BackendComment = {
+  comment_id: number;
+  recipe_id: number;
+  user_id: number;
+  username: string;
+  avatar: string;
+  comment_text: string;
+  created_at: string;
+  updated_at: string;
+  rating_value: number | null;
+};
+
+export async function fetchComments(recipeId: number): Promise<BackendComment[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/comments?action=getCommentCardsByRecipe&recipe_id=${recipeId}`
+    );
+    return data.comments || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchCommentCount(recipeId: number): Promise<number> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/comments?action=getCommentCount&recipe_id=${recipeId}`
+    );
+    return data.comment_count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function addComment(payload: {
+  recipe_id: number;
+  user_id: number;
+  comment_text: string;
+  rating_value?: number;
+}): Promise<BackendComment | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addCommentCard', ...payload }),
+    });
+    return data.comment_card || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateComment(payload: {
+  recipe_id: number;
+  user_id: number;
+  comment_text: string;
+  rating_value?: number;
+}): Promise<BackendComment | null> {
+  try {
+    const data = await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateCommentCard', ...payload }),
+    });
+    return data.comment_card || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteComment(payload: {
+  recipe_id: number;
+  user_id: number;
+}): Promise<boolean> {
+  try {
+    await safeFetch(`${BASE_URL}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteCommentCard', ...payload }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ── RATINGS (Evelyn's RatingsServlet) ────────────────────────
+export type RatingSummary = {
+  recipe_id: number;
+  rating_count: number;
+  average_rating: number;
+};
+
+export async function fetchRatingSummary(recipeId: number): Promise<RatingSummary | null> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ratings?action=getRatingSummaryByRecipe&recipe_id=${recipeId}`
+    );
+    return {
+      recipe_id: data.recipe_id,
+      rating_count: data.rating_count || 0,
+      average_rating: data.average_rating || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export type IndividualRating = {
+  rating_id: number;
+  recipe_id: number;
+  user_id: number;
+  rating_value: number;
+  created_at: string;
+  updated_at: string;
+};
+
+// Returns every individual rating for a recipe (used when user taps the
+// rating count to see all ratings).
+export async function fetchAllRatings(recipeId: number): Promise<IndividualRating[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ratings?action=getAllRatingsByRecipe&recipe_id=${recipeId}`
+    );
+    return data.ratings || [];
+  } catch {
+    return [];
+  }
+}
+
+// ── RECOMMENDATIONS (Evelyn's RecommendServlet) ──────────────
+// If user has saved recipes: similar category/difficulty/time/rating.
+// If user has no saved recipes: top 8 highest rated.
+export async function fetchRecommendedRecipes(userId: number): Promise<Recipe[]> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/recommend?action=getRecommendedRecipes&user_id=${userId}`
+    );
+    const rows: BackendRecipe[] = data.recommendations || [];
+    return rows.map(normalizeRecipe);
+  } catch {
+    return [];
+  }
+}
+
+// ── SEARCH (Ramsey's RecipeSearchService via RecipeServlet) ──
+export async function searchRecipes(params: {
+  query?: string;
+  category?: string;
+  difficulty?: string;
+  prepTime?: string;
+}): Promise<Recipe[]> {
+  try {
+    const qs = new URLSearchParams();
+    qs.set('action', 'searchRecipes');
+    if (params.query)     qs.set('query', params.query);
+    if (params.category)  qs.set('category', params.category);
+    if (params.difficulty) qs.set('difficulty', params.difficulty);
+    if (params.prepTime)  qs.set('prepTime', params.prepTime);
+    const data = await safeFetch(`${BASE_URL}/RecipeServlet?${qs.toString()}`);
+    const rows: BackendRecipe[] = data.recipes || [];
+    return rows.map(normalizeRecipe);
+  } catch {
+    return [];
+  }
+}
+
 // ── MODIFIED RECIPES (Christopher's second servlet) ─────────
 export async function fetchUserModifiedRecipes(userId: number): Promise<BackendModifiedRecipe[]> {
-  const data = await safeFetch(
-    `${BASE_URL}/ModifiedRecipeServlet?action=getUserModifiedRecipes&user_id=${userId}`
-  );
-  return data.modified_recipes || [];
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/ModifiedRecipeServlet?action=getUserModifiedRecipes&user_id=${userId}`
+    );
+    return data.modified_recipes || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function createModifiedRecipe(payload: {
@@ -212,10 +423,14 @@ export async function createModifiedRecipe(payload: {
   category?: string;
   photo_url?: string;
 }): Promise<number> {
-  const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'createModifiedRecipe', ...payload }),
-  });
-  return data.modified_recipe_id;
+  try {
+    const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createModifiedRecipe', ...payload }),
+    });
+    return data.modified_recipe_id;
+  } catch {
+    return -1;
+  }
 }

@@ -76,6 +76,40 @@ CREATE TABLE IF NOT EXISTS ModifiedRecipes (
   FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY, -- unique ID for each comment
+    recipe_id INT NOT NULL, -- recipe_id for which comment belongs to
+    user_id INT NOT NULL, -- user_id of who wrote the comment
+    comment_text TEXT NOT NULL, -- text conetent of the comment
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uq_comment_card UNIQUE (recipe_id, user_id) -- constrain to ONE COMMENT CARD PER USER AND RECIPE PAIR
+);
+
+CREATE TABLE IF NOT EXISTS ratings (
+    rating_id INT AUTO_INCREMENT PRIMARY KEY, -- unique ID for each rating
+    recipe_id INT NOT NULL, -- recipe_id of which rating belongs to
+    user_id INT NOT NULL, -- user_id of who gave the rating
+    rating_value INT NOT NULL, -- rating value between 1-5 stars 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT chk_rating_value CHECK (rating_value BETWEEN 1 AND 5), -- constrain to only store valid ratings of between 1-5 stars
+    CONSTRAINT uq_recipe_user_rating UNIQUE (recipe_id, user_id) -- constrain users to only have one rating per recipe
+);
+
+CREATE TABLE IF NOT EXISTS SavedRecipes (
+    saved_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    recipe_id INT NOT NULL,
+    saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_user_recipe UNIQUE (user_id, recipe_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (recipe_id) REFERENCES Recipes(recipe_id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_comments_recipe_id ON comments(recipe_id); -- index to load all comments for a recipe with recipe_id
+CREATE INDEX idx_ratings_recipe_id ON ratings(recipe_id); -- index to load all ratings for a recipe with recipe_id
+
 3. Configure Database Connection
 go to: backend/src/DBConnection.java
 then update:
@@ -92,15 +126,17 @@ apache-tomcat-10.x/lib/
 
 5. Compile Backend
 cd backend/src
-javac -cp ".:/path-to-tomcat/lib/*" *.java
+[Note: find path to tomcat with this command: find ~ -type d -path "*apache-tomcat*/bin"]
+[Note: find path to Json jar with this command: find ~ -name "*.jar" 2>/dev/null | grep json]
+javac -cp ".:/PATH_TO_TOMCAT/lib/*:/PATH_TO_JSON_JAR" *.java
 
-6. Deploy to Tomcat
+7. Deploy to Tomcat
 cd ..
 mkdir -p AuthApp/WEB-INF/classes
 mv src/*.class AuthApp/WEB-INF/classes/
 cp -r AuthApp /path-to-tomcat/webapps/
 
-7. Restart Tomcat
+8. Restart Tomcat
 
 cd /path-to-tomcat/bin
 ./shutdown.sh

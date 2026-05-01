@@ -40,7 +40,7 @@ export default function Login() {
       console.log('LOGIN RESPONSE:', data);
 
       if (data.success) {
-        setUser({ username: data.username || email.split('@')[0], email });
+        setUser({ username: data.username || email.split('@')[0], email, user_id: data.user_id || 0 });
         router.replace('/');
       } else {
         Alert.alert('Error', data.message || 'Login failed');
