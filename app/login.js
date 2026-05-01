@@ -2,6 +2,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -9,8 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { setUser } from '../authStore';
 import { BASE_URL as API_BASE } from '../api';
+import { setUser } from '../authStore';
 
 const BASE_URL = `${API_BASE}/AuthServlet`;
 
@@ -58,9 +59,9 @@ export default function Login() {
       resizeMode="cover"
     >
       <View style={styles.overlay}>
-        <View style={styles.logoWrap}>
-          <Text style={styles.logo}>⌂</Text>
-        </View>
+        <Pressable style={styles.logoWrap} onPress={() => router.push('/')}>
+         <Image source={require('../assets/images/homebite-logo.png')} style={styles.logoImg} />
+        </Pressable>
 
         <View style={styles.content}>
           <Text style={styles.title}>Cook the day gently.</Text>
@@ -95,7 +96,9 @@ export default function Login() {
           </View>
 
           <Pressable onPress={() => router.replace('/')}>
-            <Text style={styles.guestText}>Continue as Guest</Text>
+            <Text style={styles.guestText}>
+              Continue as <Text style={styles.guestBold}>Guest</Text>
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -106,16 +109,19 @@ export default function Login() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.42)',
     paddingHorizontal: 28,
-    paddingTop: 70,
+    paddingTop: 30,
   },
   logoWrap: {
-    marginTop: 10,
+    marginTop: -10,
     marginLeft: 6,
+    zIndex: 10,
   },
   logo: {
     fontSize: 38,
@@ -126,7 +132,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -40,
+    marginTop: -120,
   },
   title: {
     fontSize: 28,
@@ -150,10 +156,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
+    width: '78%',
+    maxWidth: 360,
   },
   button: {
-    width: 215,
-    maxWidth: '78%',
+    width: '70%',
     height: 50,
     borderRadius: 28,
     backgroundColor: '#8FAE8A',
@@ -164,6 +171,11 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 3,
+  },
+  logoImg: {
+  width: 80,
+  height: 80,
+  resizeMode: 'contain',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -182,5 +194,11 @@ const styles = StyleSheet.create({
     marginTop: 18,
     textAlign: 'center',
     fontWeight: '500',
+    zIndex: 10,
+  },
+  guestBold: {
+    color: '#D68C63',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

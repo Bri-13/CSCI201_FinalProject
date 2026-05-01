@@ -2,6 +2,7 @@ import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -52,9 +53,9 @@ export default function Signup() {
       resizeMode="cover"
     >
       <View style={styles.overlay}>
-        <View style={styles.logoWrap}>
-          <Text style={styles.logo}>⌂</Text>
-        </View>
+        <Pressable style={[styles.logoWrap, { zIndex: 10 }]} onPress={() => router.replace('/')}>
+          <Image source={require('../assets/images/homebite-logo.png')} style={styles.logoImg} />
+        </Pressable>
 
         <View style={styles.content}>
           <Text style={styles.title}>Create your account.</Text>
@@ -95,6 +96,13 @@ export default function Signup() {
               </Pressable>
             </Link>
           </View>
+
+          <Pressable onPress={() => router.replace('/')} style={{ zIndex: 10 }}>
+              <Text style={styles.guestText}>
+                Continue as <Text style={styles.guestBold}>Guest</Text>
+              </Text>
+          </Pressable>
+
         </View>
       </View>
     </ImageBackground>
@@ -104,27 +112,30 @@ export default function Signup() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.42)',
     paddingHorizontal: 28,
-    paddingTop: 70,
+    paddingTop: 30,
   },
   logoWrap: {
-    marginTop: 10,
+    marginTop: -10,
     marginLeft: 6,
+    zIndex: 10,
   },
-  logo: {
-    fontSize: 38,
-    color: '#FFFFFF',
-    fontWeight: '300',
+  logoImg: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -40,
+    marginTop: -120,
   },
   title: {
     fontSize: 28,
@@ -148,10 +159,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
+    width: '78%',
+    maxWidth: 360,
   },
   button: {
-    width: 215,
-    maxWidth: '78%',
+    width: '70%',
     height: 50,
     borderRadius: 28,
     backgroundColor: '#8FAE8A',
@@ -173,5 +185,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginLeft: 10,
+  },
+  guestText: {
+    color: '#D68C63',
+    fontSize: 15,
+    marginTop: 18,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  guestBold: {
+    color: '#D68C63',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
