@@ -60,15 +60,11 @@ function Recipe({ item }: { item: RecipeItem }) {
   );
 }
 
-// Decorative food emoji illustration for the hero banner
+// Decorative strawberry illustration for the hero banner
 function HeroIllustration() {
   return (
     <View style={styles.heroIllustration} pointerEvents="none">
-      <Text style={[styles.heroEmoji, { fontSize: 52, top: 10, right: 80 }]}>🍓</Text>
-      <Text style={[styles.heroEmoji, { fontSize: 40, top: 30, right: 30 }]}>🍋</Text>
-      <Text style={[styles.heroEmoji, { fontSize: 56, top: 60, right: 110 }]}>🍇</Text>
-      <Text style={[styles.heroEmoji, { fontSize: 44, top: 85, right: 45 }]}>🍊</Text>
-      <Text style={[styles.heroEmoji, { fontSize: 36, top: 15, right: 145 }]}>🫐</Text>
+      <Text style={[styles.heroEmoji, { fontSize: 130, top: 20, right: 10 }]}>🍓</Text>
     </View>
   );
 }
@@ -77,6 +73,8 @@ export default function Profile() {
   const router = useRouter();
 
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
+  const [savedRecipes, setSavedRecipes] = useState<RecipeItem[]>([]);
+  const [savedLoading, setSavedLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'recipes' | 'saved'>('recipes');
   const [username, setUsername] = useState<string>('');
@@ -105,6 +103,7 @@ export default function Profile() {
       setUsername(storeUser.username);
       setEmail(storeUser.email);
       fetchRecipes(storeUser.user_id);
+      fetchSavedRecipes(storeUser.user_id);
       if (!storeUser.username || !storeUser.email) {
         fetchProfile(storeUser.user_id);
       }
@@ -119,6 +118,7 @@ export default function Profile() {
     setUserId(id);
     fetchProfile(id);
     fetchRecipes(id);
+    fetchSavedRecipes(id);
   };
 
   const fetchProfile = async (id: number) => {
@@ -135,6 +135,31 @@ export default function Profile() {
       }
     } catch (err) {
       console.error('Failed to fetch profile:', err);
+    }
+  };
+
+  // ✅ CONNECTED TO SavedRecipeServlet
+  const fetchSavedRecipes = async (id: number) => {
+    setSavedLoading(true);
+    try {
+      const url = `${API_BASE}/SavedRecipeServlet?action=getSavedRecipes&user_id=${id}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.success) {
+        console.error('SavedRecipeServlet error:', data);
+        return;
+      }
+      const formatted = data.recipes.map((item: any) => ({
+        title: item.recipe_name,
+        meta: `${item.category} • ${item.difficulty} • ${item.prep_time + item.cook_time} min`,
+        description: item.instructions?.substring(0, 60) + '...',
+        rating: 4,
+      }));
+      setSavedRecipes(formatted);
+    } catch (err) {
+      console.error('Failed to fetch saved recipes:', err);
+    } finally {
+      setSavedLoading(false);
     }
   };
 
@@ -279,8 +304,12 @@ export default function Profile() {
             ) : (
               <Text style={styles.emptyText}>No recipes posted yet.</Text>
             )
+          ) : savedLoading ? (
+            <Text style={styles.emptyText}>Loading saved recipes…</Text>
+          ) : savedRecipes.length > 0 ? (
+            savedRecipes.map((item, i) => <Recipe key={i} item={item} />)
           ) : (
-            <Text style={styles.emptyText}>Saved recipes not implemented yet.</Text>
+            <Text style={styles.emptyText}>No saved recipes yet.</Text>
           )}
         </View>
       </ScrollView>
