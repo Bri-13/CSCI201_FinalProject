@@ -102,6 +102,7 @@ public class AuthServlet extends HttpServlet {
                     if (rs.next()) {
                         res.put("success", true);
                         res.put("username", rs.getString("username"));
+                        res.put("user_id", rs.getInt("user_id"));
                     } else {
                         res.put("success", false);
                         res.put("message", "Invalid credentials");

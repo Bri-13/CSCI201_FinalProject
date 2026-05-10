@@ -370,8 +370,16 @@ export async function fetchRecommendedRecipes(userId: number): Promise<Recipe[]>
     const data = await safeFetch(
       `${BASE_URL}/recommend?action=getRecommendedRecipes&user_id=${userId}`
     );
-    const rows: BackendRecipe[] = data.recommendations || [];
-    return rows.map(normalizeRecipe);
+    const rows: Array<BackendRecipe & {
+      average_rating?: number;
+      rating_count?: number;
+    }> = data.recommendations || [];
+    return rows.map((r) => {
+      const recipe = normalizeRecipe(r);
+      if (r.average_rating != null) recipe.rating = r.average_rating;
+      if (r.rating_count != null)   recipe.ratingCount = r.rating_count;
+      return recipe;
+    });
   } catch {
     return [];
   }

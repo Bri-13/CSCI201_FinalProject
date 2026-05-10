@@ -105,8 +105,9 @@ export default function HomePage() {
   const [recipes, setRecipes]           = useState<Recipe[]>(ALL_RECIPES);
   const [dataSource, setDataSource]     = useState<'loading' | 'backend' | 'mock'>('loading');
 
-  // Recommended recipes — only shown to logged-in users.
+  // Recommended recipes — personalized from backend, with mock fallback.
   const [recommended, setRecommended] = useState<Recipe[]>([]);
+  const [recSource, setRecSource] = useState<'backend' | 'mock' | 'none'>('none');
 
   useEffect(() => {
     const unsub = subscribe((u) => setLocalUser(u));
@@ -121,15 +122,30 @@ export default function HomePage() {
   }, [user]);
 
   // Load personalized recommendations when the user logs in.
+  // Falls back to the top 8 mock recipes sorted by rating if the backend
+  // returns nothing (server down, empty DB, or user not logged in).
   useEffect(() => {
+    let cancelled = false;
+    const mockFallback = [...ALL_RECIPES]
+      .sort((a, b) => b.rating - a.rating || b.ratingCount - a.ratingCount)
+      .slice(0, 8);
+
     if (!user) {
-      setRecommended([]);
+      setRecommended(mockFallback);
+      setRecSource('mock');
       return;
     }
-    let cancelled = false;
+
     (async () => {
       const rows = await fetchRecommendedRecipes(user.user_id);
-      if (!cancelled) setRecommended(rows);
+      if (cancelled) return;
+      if (rows.length > 0) {
+        setRecommended(rows);
+        setRecSource('backend');
+      } else {
+        setRecommended(mockFallback);
+        setRecSource('mock');
+      }
     })();
     return () => { cancelled = true; };
   }, [user?.user_id]);
@@ -423,13 +439,21 @@ export default function HomePage() {
                 </View>
               )}
 
-              {/* Personalized recommendations — only shown when logged in
-                  AND we're not currently showing search results. */}
-              {user && recommended.length > 0 && !activeSearch && category === 'all' && (
+              {/* Recommendations — personalized when logged in, top-rated otherwise.
+                  Hidden while actively searching or filtering by category. */}
+              {recommended.length > 0 && !activeSearch && category === 'all' && (
                 <View style={styles.recSection}>
                   <View style={styles.recHeader}>
-                    <Text style={styles.recTitle}>Recommended for you</Text>
-                    <Text style={styles.recSubtitle}>Based on what you've saved</Text>
+                    <Text style={styles.recTitle}>
+                      {recSource === 'backend' ? 'Recommended for you' : 'Top Rated Recipes'}
+                    </Text>
+                    <Text style={styles.recSubtitle}>
+                      {recSource === 'backend'
+                        ? 'Based on what you\'ve saved'
+                        : user
+                        ? 'Save some recipes to get personalized picks'
+                        : 'Log in and save recipes for personalized picks'}
+                    </Text>
                   </View>
                   <ScrollView
                     horizontal

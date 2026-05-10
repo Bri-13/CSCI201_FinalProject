@@ -164,21 +164,24 @@ export default function RecipeEditPage() {
       if (isEditing) {
         const ok = await updateRecipe({ recipe_id: editingId!, ...payload });
         if (!ok) {
-          // Backend update endpoint isn't live yet — surface this clearly
-          // but still let the user back out without losing context.
           Alert.alert(
-            'Saved locally',
-            'The backend doesn\'t support recipe updates yet. Your changes were not persisted.',
+            'Could not update',
+            'You can only edit recipes you created.',
           );
+          setSaving(false);
+          return;
         }
       } else {
         await createRecipe(payload);
       }
       router.replace('/');
-    } catch {
+    } catch (err: any) {
+      const msg = err?.message || '';
       Alert.alert(
         'Could not save',
-        'Backend is unreachable. Try again once the server is running.',
+        msg.includes('HTTP') || msg === ''
+          ? 'Backend is unreachable. Try again once the server is running.'
+          : msg,
       );
     } finally {
       setSaving(false);
