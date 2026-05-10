@@ -10,8 +10,6 @@ import {
 import { Feather, Octicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { getUser, subscribe, clearUser } from '../authStore';
-import { BASE_URL as API_BASE } from '../api';
 
 type RecipeItem = {
   title: string;
@@ -58,69 +56,24 @@ export default function Profile() {
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
   const [userId, setUserId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'recipes' | 'saved'>('recipes');
-  const [username, setUsername] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
 
   // 🔐 Check login + load data
   useEffect(() => {
     init();
-
-    // Keep username/email in sync if authStore changes while on this screen
-    const unsub = subscribe((u) => {
-      if (u) {
-        setUsername(u.username);
-        setEmail(u.email);
-      }
-    });
-    return unsub;
   }, []);
 
   const init = async () => {
-    // Prefer the in-memory authStore (already hydrated by _layout.tsx)
-    const storeUser = getUser();
+    const storedUser = await AsyncStorage.getItem('user_id');
 
-    if (storeUser) {
-      setUserId(storeUser.user_id);
-      setUsername(storeUser.username);
-      setEmail(storeUser.email);
-      fetchRecipes(storeUser.user_id);
-
-      // If the store only has partial info, fetch full profile from AuthServlet
-      if (!storeUser.username || !storeUser.email) {
-        fetchProfile(storeUser.user_id);
-      }
-      return;
-    }
-
-    // Fall back to AsyncStorage (handles cold-start before hydrateAuth finishes)
-    const storedId = await AsyncStorage.getItem('user_id');
-    if (!storedId) {
+    if (!storedUser) {
       router.replace('/login');
       return;
     }
 
-    const id = Number(storedId);
+    const id = Number(storedUser);
     setUserId(id);
-    fetchProfile(id);
-    fetchRecipes(id);
-  };
 
-  // ✅ CONNECTED TO AuthServlet — fetches username + email for a given user_id
-  const fetchProfile = async (id: number) => {
-    try {
-      const res = await fetch(`${API_BASE}/AuthServlet`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'getProfile', user_id: id }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setUsername(data.username || '');
-        setEmail(data.email || '');
-      }
-    } catch (err) {
-      console.error('Failed to fetch profile:', err);
-    }
+    fetchRecipes(id);
   };
 
   // ✅ CONNECTED TO RecipeServlet
@@ -159,7 +112,6 @@ export default function Profile() {
   // 🚪 Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem('user_id');
-    clearUser();
     router.replace('/login');
   };
 
@@ -168,8 +120,7 @@ export default function Profile() {
       <ScrollView style={{ padding: 20 }}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.username}>{username || 'Profile'}</Text>
-          {!!email && <Text style={styles.email}>{email}</Text>}
+          <Text style={styles.username}>Profile</Text>
 
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <Text style={{ color: 'white' }}>Logout</Text>
@@ -225,12 +176,6 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 28,
     fontWeight: 'bold',
-  },
-  email: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-    marginBottom: 4,
   },
   logoutButton: {
     marginTop: 10,
