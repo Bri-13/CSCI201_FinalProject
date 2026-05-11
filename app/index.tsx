@@ -22,7 +22,7 @@ import {
   INITIAL_SAVED_IDS,
   Recipe,
 } from '../data';
-import { fetchAllRecipes, searchRecipes, fetchRecommendedRecipes } from '../api';
+import { fetchAllRecipes, searchRecipes, fetchRecommendedRecipes, fetchSavedRecipeIds, toggleSaveRecipe } from '../api';
 import { getUser, subscribe } from '../authStore';
 
 // ── small reusable bits ──────────────────────────────────────
@@ -114,12 +114,14 @@ export default function HomePage() {
     return unsub;
   }, []);
 
-  // Clear local saved-recipe state when the user logs out so the heart icons
-  // don't keep showing as filled. (Once backend save endpoint exists, this
-  // will be replaced by fetching the user's saved list on login.)
+  // Sync saved-recipe state with backend when user logs in/out.
   useEffect(() => {
-    if (!user) setSavedIds(new Set());
-  }, [user]);
+    if (!user) {
+      setSavedIds(new Set());
+      return;
+    }
+    fetchSavedRecipeIds(user.user_id).then(setSavedIds);
+  }, [user?.user_id]);
 
   // Load personalized recommendations when the user logs in.
   // Falls back to the top 8 mock recipes sorted by rating if the backend
@@ -239,7 +241,7 @@ export default function HomePage() {
       else next.add(id);
       return next;
     });
-    // TODO(Shriya): POST/DELETE /api/users/me/saved
+    toggleSaveRecipe(user.user_id, id);
   };
 
   const openRecipe = (id: number) => {
@@ -553,7 +555,7 @@ export default function HomePage() {
                       </View>
                     </Pressable>
                   ))}
-                  <Pressable onPress={() => router.push('/profile')}>
+                  <Pressable onPress={() => router.push({ pathname: '/profile', params: { tab: 'saved' } })}>
                     <Text style={styles.seeAll}>View all saved {'->'}</Text>
                   </Pressable>
                 </View>
@@ -586,7 +588,7 @@ export default function HomePage() {
                       </Pressable>
                     ))
                   )}
-                  <Pressable onPress={() => router.push('/profile')}>
+                  <Pressable onPress={() => router.push({ pathname: '/profile', params: { tab: 'modified' } })}>
                     <Text style={styles.seeAll}>View all modified {'->'}</Text>
                   </Pressable>
                 </View>

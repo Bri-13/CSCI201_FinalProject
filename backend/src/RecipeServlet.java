@@ -32,7 +32,9 @@ public class RecipeServlet extends HttpServlet {
             if ("getRecipe".equals(action)) {
                 int recipeId = Integer.parseInt(request.getParameter("recipe_id"));
                 PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT * FROM Recipes WHERE recipe_id = ?");
+                        "SELECT r.*, COALESCE(AVG(rt.rating_value),0) AS average_rating, COUNT(rt.rating_id) AS rating_count " +
+                        "FROM Recipes r LEFT JOIN ratings rt ON r.recipe_id = rt.recipe_id " +
+                        "WHERE r.recipe_id = ? GROUP BY r.recipe_id");
                 stmt.setInt(1, recipeId);
                 ResultSet rs = stmt.executeQuery();
 
@@ -46,7 +48,9 @@ public class RecipeServlet extends HttpServlet {
 
             } else if ("getAllRecipes".equals(action)) {
                 PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT * FROM Recipes ORDER BY created_at DESC");
+                        "SELECT r.*, COALESCE(AVG(rt.rating_value),0) AS average_rating, COUNT(rt.rating_id) AS rating_count " +
+                        "FROM Recipes r LEFT JOIN ratings rt ON r.recipe_id = rt.recipe_id " +
+                        "GROUP BY r.recipe_id ORDER BY r.created_at DESC");
                 ResultSet rs = stmt.executeQuery();
                 JSONArray recipes = new JSONArray();
 
@@ -60,7 +64,9 @@ public class RecipeServlet extends HttpServlet {
             } else if ("getUserRecipes".equals(action)) {
                 int userId = Integer.parseInt(request.getParameter("user_id"));
                 PreparedStatement stmt = conn.prepareStatement(
-                        "SELECT * FROM Recipes WHERE user_id = ? ORDER BY created_at DESC");
+                        "SELECT r.*, COALESCE(AVG(rt.rating_value),0) AS average_rating, COUNT(rt.rating_id) AS rating_count " +
+                        "FROM Recipes r LEFT JOIN ratings rt ON r.recipe_id = rt.recipe_id " +
+                        "WHERE r.user_id = ? GROUP BY r.recipe_id ORDER BY r.created_at DESC");
                 stmt.setInt(1, userId);
                 ResultSet rs = stmt.executeQuery();
                 JSONArray recipes = new JSONArray();
@@ -286,6 +292,8 @@ public class RecipeServlet extends HttpServlet {
         recipe.put("category", rs.getString("category"));
         recipe.put("photo_url", rs.getString("photo_url"));
         recipe.put("created_at", String.valueOf(rs.getTimestamp("created_at")));
+        recipe.put("average_rating", rs.getDouble("average_rating"));
+        recipe.put("rating_count", rs.getInt("rating_count"));
         return recipe;
     }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Feather, Octicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { clearUser, getUser, subscribe } from '../authStore';
@@ -24,21 +24,8 @@ export default function LeftNav({ active = 'home' }: Props) {
   const goSearch  = () => router.push({ pathname: '/', params: { focus: 'search', t: String(Date.now()) } });
 
   const handleLogout = () => {
-    Alert.alert(
-      'Log out',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: () => {
-            clearUser();
-            router.replace('/login');
-          },
-        },
-      ]
-    );
+    clearUser();
+    router.replace('/login');
   };
 
   return (

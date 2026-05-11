@@ -88,9 +88,9 @@ public class CommentsServlet extends HttpServlet {
                         "c.created_at, " +
                         "c.updated_at, " +
                         "r.rating_value " +
-                        "FROM social_db.comments c " +
-                        "JOIN auth_db.Users u ON c.user_id = u.user_id " +
-                        "LEFT JOIN social_db.ratings r ON c.recipe_id = r.recipe_id AND c.user_id = r.user_id " +
+                        "FROM comments c " +
+                        "JOIN Users u ON c.user_id = u.user_id " +
+                        "LEFT JOIN ratings r ON c.recipe_id = r.recipe_id AND c.user_id = r.user_id " +
                         "WHERE c.recipe_id = ? " +
                         "ORDER BY c.created_at DESC");
                 stmt.setInt(1, recipeId);
@@ -340,9 +340,9 @@ public class CommentsServlet extends HttpServlet {
                 "c.created_at, " +
                 "c.updated_at, " +
                 "r.rating_value " +
-                "FROM social_db.comments c " +
-                "JOIN auth_db.Users u ON c.user_id = u.user_id " +
-                "LEFT JOIN social_db.ratings r ON c.recipe_id = r.recipe_id AND c.user_id = r.user_id " +
+                "FROM comments c " +
+                "JOIN Users u ON c.user_id = u.user_id " +
+                "LEFT JOIN ratings r ON c.recipe_id = r.recipe_id AND c.user_id = r.user_id " +
                 "WHERE c.recipe_id = ? AND c.user_id = ?");
 
         stmt.setInt(1, recipeId);

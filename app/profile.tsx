@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Feather, Octicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getUser, subscribe, clearUser } from '../authStore';
 import { BASE_URL as API_BASE } from '../api';
 
@@ -71,12 +71,15 @@ function HeroIllustration() {
 
 export default function Profile() {
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
 
   const [recipes, setRecipes] = useState<RecipeItem[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<RecipeItem[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'recipes' | 'saved'>('recipes');
+  const [activeTab, setActiveTab] = useState<'recipes' | 'saved'>(
+    tab === 'saved' ? 'saved' : 'recipes'
+  );
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
 
@@ -166,7 +169,7 @@ export default function Profile() {
   const fetchRecipes = async (id: number) => {
     try {
       const url =
-        `http://localhost:8080/AuthApp/RecipeServlet` +
+        `${API_BASE}/RecipeServlet` +
         `?action=getUserRecipes&user_id=${id}`;
       const res = await fetch(url);
       const data = await res.json();

@@ -114,9 +114,9 @@ export function normalizeRecipe(r: BackendRecipe): Recipe {
     difficulty,
     tags:         category ? [category] : [],
     displayTags:  category ? [category[0].toUpperCase() + category.slice(1)] : [],
-    rating:       0,     // TODO: Evelyn's social servlet
-    ratingCount:  0,     // TODO: Evelyn
-    commentCount: 0,     // TODO: Evelyn
+    rating:       Math.round((r as any).average_rating * 10) / 10 || 0,
+    ratingCount:  (r as any).rating_count || 0,
+    commentCount: 0,
   };
 }
 
@@ -398,7 +398,7 @@ export async function searchRecipes(params: {
     if (params.query)     qs.set('query', params.query);
     if (params.category)  qs.set('category', params.category);
     if (params.difficulty) qs.set('difficulty', params.difficulty);
-    if (params.prepTime)  qs.set('prepTime', params.prepTime);
+    if (params.prepTime)  qs.set('prep_time', params.prepTime);
     const data = await safeFetch(`${BASE_URL}/RecipeServlet?${qs.toString()}`);
     const rows: BackendRecipe[] = data.recipes || [];
     return rows.map(normalizeRecipe);
@@ -483,4 +483,30 @@ export async function modifyRecipeWithAI(payload: {
   // } catch {
   //   return null;
   // }
+}
+
+// ── SAVED RECIPES (SavedRecipeServlet) ──────────────────────
+export async function fetchSavedRecipeIds(userId: number): Promise<Set<number>> {
+  try {
+    const data = await safeFetch(
+      `${BASE_URL}/SavedRecipeServlet?action=getSavedRecipeIds&user_id=${userId}`
+    );
+    const ids: number[] = data.recipe_ids || [];
+    return new Set(ids);
+  } catch {
+    return new Set();
+  }
+}
+
+export async function toggleSaveRecipe(userId: number, recipeId: number): Promise<boolean> {
+  try {
+    await safeFetch(`${BASE_URL}/SavedRecipeServlet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggleSaveRecipe', user_id: userId, recipe_id: recipeId }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
