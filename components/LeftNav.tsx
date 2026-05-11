@@ -44,14 +44,7 @@ export default function LeftNav({ active = 'home' }: Props) {
         style={styles.navPlusButton}
         onPress={() => {
           if (!user) {
-            Alert.alert(
-              'Login required',
-              'Please log in to create a recipe.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Log in', onPress: () => router.push('/login') },
-              ]
-            );
+            router.push('/login');
             return;
           }
           router.push('/recipe-edit');
