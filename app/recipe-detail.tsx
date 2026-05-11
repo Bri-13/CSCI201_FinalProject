@@ -103,6 +103,7 @@ export default function RecipeDetailPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [modifyingRecipe, setModifyingRecipe] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   useEffect(() => {
     const unsub = subscribe((u) => setLocalUser(u));
@@ -332,58 +333,59 @@ export default function RecipeDetailPage() {
   const handleModifyWithAI = async () => {
     const prompt = aiPrompt.trim();
     if (!prompt) {
-      Alert.alert('Prompt required', 'Please describe how you want to modify this recipe.');
+      setAiError('Please describe how you want to modify this recipe.');
       return;
     }
     if (!user) {
-      Alert.alert('Login required', 'Please log in to modify recipes with AI.');
+      setAiError('Please log in to modify recipes with AI.');
       return;
     }
     if (!originalRecipe || !originalDetail) {
-      Alert.alert('Recipe unavailable', 'Please wait for the recipe to finish loading.');
+      setAiError('Recipe still loading — please wait a moment.');
       return;
     }
 
+    setAiError('');
     setModifyingRecipe(true);
-    const modified = await modifyRecipeWithAI({
-      original_recipe_id: originalRecipe.id,
-      user_id: user.user_id,
-      prompt,
-    });
-    setModifyingRecipe(false);
+    try {
+      const modified = await modifyRecipeWithAI({
+        original_recipe_id: originalRecipe.id,
+        user_id: user.user_id,
+        prompt,
+      });
 
-    if (!modified) {
-      Alert.alert('AI modify failed', 'Could not modify the recipe. Please try again.');
-      return;
+      const splitList = (s: string) => s.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      const totalMin = (modified.prep_time || 0) + (modified.cook_time || 0);
+      const updatedRecipe: Recipe = {
+        ...originalRecipe,
+        title: modified.recipe_name || originalRecipe.title,
+        time: totalMin > 0 ? `${totalMin} min` : originalRecipe.time,
+        timeMin: totalMin > 0 ? totalMin : originalRecipe.timeMin,
+        difficulty: modified.difficulty === 'Hard' || modified.difficulty === 'Medium' || modified.difficulty === 'Easy'
+          ? modified.difficulty
+          : originalRecipe.difficulty,
+        tags: modified.category ? [modified.category.toLowerCase()] : originalRecipe.tags,
+        displayTags: modified.category ? [modified.category] : originalRecipe.displayTags,
+      };
+      const updatedDetail: RecipeDetail = {
+        ...originalDetail,
+        ingredients: splitList(modified.ingredients || ''),
+        instructions: splitList(modified.instructions || ''),
+        nutrition: modified.nutrition || originalDetail.nutrition,
+      };
+
+      setModifiedRecipe(updatedRecipe);
+      setModifiedDetail(updatedDetail);
+      setRecipe(updatedRecipe);
+      setDetail(updatedDetail);
+      setShowModifiedRecipe(true);
+      setShowAiPanel(false);
+      setAiPrompt('');
+    } catch (err: any) {
+      setAiError(err?.message || 'Could not modify the recipe. Please try again.');
+    } finally {
+      setModifyingRecipe(false);
     }
-
-    const splitList = (s: string) => s.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    const totalMin = (modified.prep_time || 0) + (modified.cook_time || 0);
-    const updatedRecipe: Recipe = {
-      ...originalRecipe,
-      title: modified.recipe_name || originalRecipe.title,
-      time: totalMin > 0 ? `${totalMin} min` : originalRecipe.time,
-      timeMin: totalMin > 0 ? totalMin : originalRecipe.timeMin,
-      difficulty: modified.difficulty === 'Hard' || modified.difficulty === 'Medium' || modified.difficulty === 'Easy'
-        ? modified.difficulty
-        : originalRecipe.difficulty,
-      tags: modified.category ? [modified.category.toLowerCase()] : originalRecipe.tags,
-      displayTags: modified.category ? [modified.category] : originalRecipe.displayTags,
-    };
-    const updatedDetail: RecipeDetail = {
-      ...originalDetail,
-      ingredients: splitList(modified.ingredients || ''),
-      instructions: splitList(modified.instructions || ''),
-      nutrition: modified.nutrition || originalDetail.nutrition,
-    };
-
-    setModifiedRecipe(updatedRecipe);
-    setModifiedDetail(updatedDetail);
-    setRecipe(updatedRecipe);
-    setDetail(updatedDetail);
-    setShowModifiedRecipe(true);
-    setShowAiPanel(false);
-    setAiPrompt('');
   };
 
   return (
@@ -489,8 +491,11 @@ export default function RecipeDetailPage() {
                   multiline
                   numberOfLines={3}
                 />
+                {!!aiError && (
+                  <Text style={styles.aiError}>{aiError}</Text>
+                )}
                 <View style={styles.aiPanelActions}>
-                  <Pressable style={styles.btnCancelEdit} onPress={() => setShowAiPanel(false)}>
+                  <Pressable style={styles.btnCancelEdit} onPress={() => { setShowAiPanel(false); setAiError(''); }}>
                     <Text style={styles.btnCancelEditText}>Cancel</Text>
                   </Pressable>
                   <Pressable
@@ -830,6 +835,7 @@ const styles = StyleSheet.create({
   aiPanelTitle: { fontSize: 14, fontWeight: '600', color: '#303030' },
   aiPromptInput: { minHeight: 70, backgroundColor: '#f3ece0', borderRadius: 10, borderWidth: 1.5, borderColor: '#E8DDD5', padding: 10, fontSize: 13, color: '#303030', textAlignVertical: 'top' },
   aiPanelActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
+  aiError: { fontSize: 12, color: '#cc4444', marginTop: 2 },
 
   contentGrid: { flexDirection: 'row', gap: 32, marginBottom: 40 },
   desc: { fontSize: 14, lineHeight: 22, color: '#5f5d60', marginBottom: 24 },

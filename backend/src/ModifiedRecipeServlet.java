@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 @WebServlet("/ModifiedRecipeServlet")
 public class ModifiedRecipeServlet extends HttpServlet {
-    private static final String GEMINI_API_KEY = "AIzaSyCDqrnTtaJ3VYjyGxiiSwwI-gsBbrGHNGs";
+    private static final String GEMINI_API_KEY = "AIzaSyBsLaGgDDf1JMboR9tGTpTLR89Rkm3AsZg";
 
     private void setCorsHeaders(HttpServletResponse response) {
         response.setHeader("Access-Control-Allow-Origin", "*");

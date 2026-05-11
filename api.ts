@@ -447,42 +447,13 @@ export async function modifyRecipeWithAI(payload: {
   original_recipe_id: number;
   user_id: number;
   prompt: string;
-}): Promise<BackendAiModifiedRecipe | null> {
-  // For testing: return a mock modified recipe
-  return {
-    modified_recipe_id: 999,
-    original_recipe_id: payload.original_recipe_id,
-    recipe_id: 999,
-    user_id: payload.user_id,
-    recipe_name: "Modified Test Pasta (Vegan)",
-    ingredients: "200g vegan pasta\n2 cups vegetable broth\n1 tbsp olive oil\nSalt to taste",
-    instructions: "Heat vegetable broth in a pot\nAdd vegan pasta and cook for 8-10 minutes\nDrain and toss with olive oil\nSeason with salt",
-    prep_time: 5,
-    cook_time: 10,
-    difficulty: "Easy",
-    category: "Vegan Italian",
-    photo_url: "",
-    created_at: new Date().toISOString(),
-    nutrition: {
-      calories: 350,
-      protein: "12g",
-      carbs: "65g",
-      fat: "8g",
-      fiber: "5g",
-    }
-  };
-
-  // Original code (commented out due to API key issues):
-  // try {
-  //   const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ action: 'modifyRecipeWithAI', ...payload }),
-  //   });
-  //   return data.modified_recipe;
-  // } catch {
-  //   return null;
-  // }
+}): Promise<BackendAiModifiedRecipe> {
+  const data = await safeFetch(`${BASE_URL}/ModifiedRecipeServlet`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'modifyRecipeWithAI', ...payload }),
+  });
+  return data.modified_recipe;
 }
 
 // ── SAVED RECIPES (SavedRecipeServlet) ──────────────────────
